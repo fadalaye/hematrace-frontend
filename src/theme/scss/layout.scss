@@ -1,0 +1,16 @@
+/* You can add global styles to this file, and also import other style files */
+body.fixed-header .app-header {
+  position: fixed;
+  top: 0;
+  width: -webkit-fill-available;
+  z-index: 999;
+}
+body.fixed-footer .app-footer {
+  position: fixed;
+  bottom: 0;
+  width: -webkit-fill-available;
+  z-index: 999;
+}
+[data-overlayscrollbars~=host], [data-overlayscrollbars-padding] {
+    width: 100% !important;
+}

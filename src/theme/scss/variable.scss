@@ -1,0 +1,42 @@
+:root {
+    --background-color: #f4f4f4;
+    --primary-color: #6610f2;
+    --secondary-color: #ff4b4b;
+    --tertiary-color: #ff416c;
+    --light-color: #f8f9fa;
+    --dark-color: #333;
+    --danger-color: #dc3545;
+    --primery-light-color: #eee;
+    --medium-color: #dfe0e1;
+    --success-color: #27bb4f;
+    --medium-color:#ffc409;
+    --white-color:#fff;
+
+    --font-size-xs: 0.7rem;
+    --font-size-small: 0.8rem;
+    --font-size-medium: 0.9rem;
+    --font-size-large: 1rem;
+    --font-size-xl: 1.2rem;
+    --font-size-xxl: 1.4rem;
+    --font-size-xxxl: 1.8rem;
+}
+
+.bg-color {
+    background-color: var(--background-color) !important;
+}
+
+.primary-color {
+
+    color: var(--primary-color);
+}
+.error-color {
+    color: var(--danger-color);
+}
+.bg-primary-color {
+
+    background-color: var(--primary-color) !important;
+}
+.font-large {
+    font-size: var(--font-size-large);
+}
+

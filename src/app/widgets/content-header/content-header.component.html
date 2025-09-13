@@ -1,0 +1,33 @@
+<div class="app-content-header">
+    <!--begin::Container-->
+    <div class="container-fluid">
+        <!--begin::Row-->
+        <div class="row">
+            <div class="col-sm-6">
+                <h1 class="mb-0">{{title()}}</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-end">
+                    <li class="breadcrumb-item" routerLinkActive="actives">
+                        <a routerLink="/app">
+                            <i class="bi bi-house primary-color"></i>
+                        </a>
+                    </li>
+                    <li routerLinkActive="actives" class="breadcrumb-item active" aria-current="page">
+                        <a [routerLink]="route()">
+                            {{subRoute()}}
+                        </a>
+                    </li>
+
+                    @if (lastRoute()){
+                        <li routerLinkActive="actives" class="breadcrumb-item active" aria-current="page">
+                        <a [routerLink]="route()">
+                            {{lastRouteName()}}
+                        </a>
+                    </li>
+                    }
+                </ol>
+            </div>
+        </div>
+        <!--end::Row-->
+    </div>

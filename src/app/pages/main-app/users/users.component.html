@@ -1,0 +1,138 @@
+<div class="mx-4 my-1 border-0">
+    <app-content-header [title]="title" [subRoute]="title"></app-content-header>
+
+    <div class="d-flex align-items-center justify-content-end">
+        <input type="text"
+        class="form-control border-white px-2 py-1 search-table-input" 
+        placeholder="Search..."
+        (input)="onFilterChange($event)"
+    >
+    <button class="py-0 border-0 ms-2" mat-icon-button (click)="exportToExcel()">
+        <i class="bi bi-file-earmark-excel-fill text-success fs-2"></i>
+    </button>
+    <button class="ms-2" mat-raised-button color="accent">
+        <mat-icon ria-hidden="false" aria-label="add icon" fontIcon="add"></mat-icon>
+        ADD USER
+    </button>
+    </div>
+    <div class="col-md-12 mb-3 mt-1">
+
+        <ngx-datatable #table
+            class="material rounded"
+            [rows]="users()"
+            [columnMode]="columnMode.force"
+            [headerHeight]="50"
+            [summaryRow]="true"
+            [footerHeight]="50"
+            [scrollbarH]="true"
+            [loadingIndicator]="loadingIndicator()"
+            rowHeight="auto"
+            [count]="users().length"
+            [offset]="1"
+            [limit]="10"
+            [rows]="users()"
+            (page)="onPageChange($event)"
+            (sort)="onSortChange($event)"
+        >
+
+            <ngx-datatable-column prop="photo" [sortable]="true">
+                <ng-template 
+                    let-column="column" 
+                    ngx-datatable-header-template 
+                    let-sort="sortFn"
+                    >
+                    <span class="text-white fw-medium tableHeader">PHOTO</span>
+                </ng-template>
+                <ng-template let-value="value" ngx-datatable-cell-template>
+                    <img [src]="value" class="bg-color avatar-image rounded-circle">
+                </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column prop="name" [sortable]="true">
+                <ng-template 
+                    let-column="column" 
+                    ngx-datatable-header-template 
+                    let-sort="sortFn"
+                    >
+                    <span class="text-white fw-medium tableHeader">NAME</span>
+                </ng-template>
+                <ng-template let-value="value" ngx-datatable-cell-template>
+                    {{ value }}
+                </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column prop="dob" [sortable]="true">
+                <ng-template 
+                    let-column="column" 
+                    ngx-datatable-header-template 
+                    let-sort="sortFn"
+                    >
+                    <span class="text-white fw-medium tableHeader">GENDER & DOB</span>
+                </ng-template>
+                <ng-template let-row="row" ngx-datatable-cell-template>
+                    {{ row?.gender }}
+                    <p>
+                    {{ row?.dob | date:'MMM d, y' }}
+                    </p>
+                </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column prop="email" [sortable]="true">
+                <ng-template 
+                    let-column="column" 
+                    ngx-datatable-header-template 
+                    let-sort="sortFn"
+                    >
+                    <span class="text-white fw-medium tableHeader">EMAIL</span>
+                </ng-template>
+                <ng-template let-value="value" ngx-datatable-cell-template>
+                    {{ value }}
+                </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column prop="phone" [sortable]="true">
+                <ng-template 
+                    let-column="column" 
+                    ngx-datatable-header-template 
+                    let-sort="sortFn"
+                    >
+                    <span class="text-white fw-medium tableHeader">PHONE</span>
+                </ng-template>
+                <ng-template let-value="value" ngx-datatable-cell-template>
+                    {{ value }}
+                </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column prop="address" [sortable]="true">
+                <ng-template 
+                    let-column="column" 
+                    ngx-datatable-header-template 
+                    let-sort="sortFn"
+                    >
+                    <span class="text-white fw-medium tableHeader">ADDRESS</span>
+                </ng-template>
+                <ng-template let-value="value" ngx-datatable-cell-template>
+                    {{ value }}
+                </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column [frozenRight]="true">
+                <ng-template ngx-datatable-header-template>
+                    <span class="text-white fw-medium tableHeader">ACTIONS</span>
+                </ng-template>
+                <ng-template let-row="row" ngx-datatable-cell-template>
+                    <button class="btn btn-sm mx-1">
+                        <i class="fa fa-edit primary-color"></i>
+                    </button>
+                    <button class="btn btn-sm mx-1" (click)="deleteItem(row)">
+                        <i class="fa fa-trash error-color"></i>
+                    </button>
+                    
+                </ng-template>
+            </ngx-datatable-column>
+            
+        </ngx-datatable>
+
+    </div>
+</div>
+
