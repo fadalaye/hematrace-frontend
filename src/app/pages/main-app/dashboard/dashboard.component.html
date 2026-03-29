@@ -1,441 +1,469 @@
-<div class="app-content">
-          <!--begin::Container-->
-          <div class="container-fluid">
-            <!--begin::Row-->
-            <div class="row">
-              <!--begin::Col-->
-              <div class="col-lg-3 col-6">
-                <!--begin::Small Box Widget 1-->
-                <div class="small-box text-bg-primary">
-                  <div class="inner">
-                    <h3>150</h3>
+<!-- src/app/pages/main-app/dashboard/dashboard.component.html -->
+<div class="dashboard-container">
+  
+  <!-- ============================================
+       SECTION EN-TÊTE
+  ============================================ -->
+  <div class="dashboard-header mb-4">
+    <h1 class="page-title">
+      <mat-icon class="me-2">dashboard</mat-icon>
+      Tableau de bord
+    </h1>
+    <p class="page-subtitle">
+      Vue d'ensemble de la plateforme HemaTrace
+      <span class="text-muted ms-2">{{ today | date:'dd MMMM yyyy' }}</span>
+    </p>
+  </div>
 
-                    <p>New Orders</p>
-                  </div>
-                  <svg
-                    class="small-box-icon"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z"
-                    ></path>
-                  </svg>
-                  <a
-                    href="#"
-                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
-                  >
-                    More info <i class="bi bi-link-45deg"></i>
-                  </a>
-                </div>
-                <!--end::Small Box Widget 1-->
-              </div>
-              <!--end::Col-->
-              <div class="col-lg-3 col-6">
-                <!--begin::Small Box Widget 2-->
-                <div class="small-box text-bg-success">
-                  <div class="inner">
-                    <h3>53<sup class="fs-5">%</sup></h3>
-
-                    <p>Bounce Rate</p>
-                  </div>
-                  <svg
-                    class="small-box-icon"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z"
-                    ></path>
-                  </svg>
-                  <a
-                    href="#"
-                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
-                  >
-                    More info <i class="bi bi-link-45deg"></i>
-                  </a>
-                </div>
-                <!--end::Small Box Widget 2-->
-              </div>
-              <!--end::Col-->
-              <div class="col-lg-3 col-6">
-                <!--begin::Small Box Widget 3-->
-                <div class="small-box text-bg-warning">
-                  <div class="inner">
-                    <h3>44</h3>
-
-                    <p>User Registrations</p>
-                  </div>
-                  <svg
-                    class="small-box-icon"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M6.25 6.375a4.125 4.125 0 118.25 0 4.125 4.125 0 01-8.25 0zM3.25 19.125a7.125 7.125 0 0114.25 0v.003l-.001.119a.75.75 0 01-.363.63 13.067 13.067 0 01-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 01-.364-.63l-.001-.122zM19.75 7.5a.75.75 0 00-1.5 0v2.25H16a.75.75 0 000 1.5h2.25v2.25a.75.75 0 001.5 0v-2.25H22a.75.75 0 000-1.5h-2.25V7.5z"
-                    ></path>
-                  </svg>
-                  <a
-                    href="#"
-                    class="small-box-footer link-dark link-underline-opacity-0 link-underline-opacity-50-hover"
-                  >
-                    More info <i class="bi bi-link-45deg"></i>
-                  </a>
-                </div>
-                <!--end::Small Box Widget 3-->
-              </div>
-              <!--end::Col-->
-              <div class="col-lg-3 col-6">
-                <!--begin::Small Box Widget 4-->
-                <div class="small-box text-bg-danger">
-                  <div class="inner">
-                    <h3>65</h3>
-
-                    <p>Unique Visitors</p>
-                  </div>
-                  <svg
-                    class="small-box-icon"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      clip-rule="evenodd"
-                      fill-rule="evenodd"
-                      d="M2.25 13.5a8.25 8.25 0 018.25-8.25.75.75 0 01.75.75v6.75H18a.75.75 0 01.75.75 8.25 8.25 0 01-16.5 0z"
-                    ></path>
-                    <path
-                      clip-rule="evenodd"
-                      fill-rule="evenodd"
-                      d="M12.75 3a.75.75 0 01.75-.75 8.25 8.25 0 018.25 8.25.75.75 0 01-.75.75h-7.5a.75.75 0 01-.75-.75V3z"
-                    ></path>
-                  </svg>
-                  <a
-                    href="#"
-                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
-                  >
-                    More info <i class="bi bi-link-45deg"></i>
-                  </a>
-                </div>
-                <!--end::Small Box Widget 4-->
-              </div>
-              <!--end::Col-->
-            </div>
-            <!--end::Row-->
-            <!--begin::Row-->
-            <div class="row">
-              <!-- Start col -->
-              <div class="col-lg-7 connectedSortable">
-                <div class="card mb-4">
-                  <div class="card-header">
-                    <h3 class="card-title">Sales Value</h3>
-                  </div>
-
-                  <div class="card-body">
-                    <div id="revenue-chart"></div>
-                  </div>
-                </div>
-                <!-- /.card -->
-
-                <!-- DIRECT CHAT -->
-                <div class="card direct-chat direct-chat-primary mb-4">
-                  <div class="card-header">
-                    <h3 class="card-title">Direct Chat</h3>
-
-                    <div class="card-tools">
-                      <span title="3 New Messages" class="badge text-bg-primary"> 3 </span>
-                      <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
-                        <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
-                        <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-tool"
-                        title="Contacts"
-                        data-lte-toggle="chat-pane"
-                      >
-                        <i class="bi bi-chat-text-fill"></i>
-                      </button>
-                      <button type="button" class="btn btn-tool" data-lte-toggle="card-remove">
-                        <i class="bi bi-x-lg"></i>
-                      </button>
-                    </div>
-                  </div>
-                  <!-- /.card-header -->
-                  <div class="card-body">
-                    <!-- Conversations are loaded here -->
-                    <div class="direct-chat-messages">
-                      <!-- Message. Default to the start -->
-                      <div class="direct-chat-msg">
-                        <div class="direct-chat-infos clearfix">
-                          <span class="direct-chat-name float-start"> Alexander Pierce </span>
-                          <span class="direct-chat-timestamp float-end"> 23 Jan 2:00 pm </span>
-                        </div>
-                        <!-- /.direct-chat-infos -->
-                        <img
-                          class="direct-chat-img"
-                          src="assets/img/user1-128x128.jpg"
-                          alt="message user image"
-                        />
-                        <!-- /.direct-chat-img -->
-                        <div class="direct-chat-text">
-                          Is this template really for free? That's unbelievable!
-                        </div>
-                        <!-- /.direct-chat-text -->
-                      </div>
-                      <!-- /.direct-chat-msg -->
-
-                      <!-- Message to the end -->
-                      <div class="direct-chat-msg end">
-                        <div class="direct-chat-infos clearfix">
-                          <span class="direct-chat-name float-end"> Sarah Bullock </span>
-                          <span class="direct-chat-timestamp float-start"> 23 Jan 2:05 pm </span>
-                        </div>
-                        <!-- /.direct-chat-infos -->
-                        <img
-                          class="direct-chat-img"
-                          src="assets/img/user3-128x128.jpg"
-                          alt="message user image"
-                        />
-                        <!-- /.direct-chat-img -->
-                        <div class="direct-chat-text">You better believe it!</div>
-                        <!-- /.direct-chat-text -->
-                      </div>
-                      <!-- /.direct-chat-msg -->
-
-                      <!-- Message. Default to the start -->
-                      <div class="direct-chat-msg">
-                        <div class="direct-chat-infos clearfix">
-                          <span class="direct-chat-name float-start"> Alexander Pierce </span>
-                          <span class="direct-chat-timestamp float-end"> 23 Jan 5:37 pm </span>
-                        </div>
-                        <!-- /.direct-chat-infos -->
-                        <img
-                          class="direct-chat-img"
-                          src="assets/img/user1-128x128.jpg"
-                          alt="message user image"
-                        />
-                        <!-- /.direct-chat-img -->
-                        <div class="direct-chat-text">
-                          Working with AdminLTE on a great new app! Wanna join?
-                        </div>
-                        <!-- /.direct-chat-text -->
-                      </div>
-                      <!-- /.direct-chat-msg -->
-
-                      <!-- Message to the end -->
-                      <div class="direct-chat-msg end">
-                        <div class="direct-chat-infos clearfix">
-                          <span class="direct-chat-name float-end"> Sarah Bullock </span>
-                          <span class="direct-chat-timestamp float-start"> 23 Jan 6:10 pm </span>
-                        </div>
-                        <!-- /.direct-chat-infos -->
-                        <img
-                          class="direct-chat-img"
-                          src="assets/img/user3-128x128.jpg"
-                          alt="message user image"
-                        />
-                        <!-- /.direct-chat-img -->
-                        <div class="direct-chat-text">I would love to.</div>
-                        <!-- /.direct-chat-text -->
-                      </div>
-                      <!-- /.direct-chat-msg -->
-                    </div>
-                    <!-- /.direct-chat-messages-->
-
-                    <!-- Contacts are loaded here -->
-                    <div class="direct-chat-contacts">
-                      <ul class="contacts-list">
-                        <li>
-                          <a href="#">
-                            <img
-                              class="contacts-list-img"
-                              src="assets/img/user1-128x128.jpg"
-                              alt="User Avatar"
-                            />
-
-                            <div class="contacts-list-info">
-                              <span class="contacts-list-name">
-                                Count Dracula
-                                <small class="contacts-list-date float-end"> 2/28/2023 </small>
-                              </span>
-                              <span class="contacts-list-msg"> How have you been? I was... </span>
-                            </div>
-                            <!-- /.contacts-list-info -->
-                          </a>
-                        </li>
-                        <!-- End Contact Item -->
-                        <li>
-                          <a href="#">
-                            <img
-                              class="contacts-list-img"
-                              src="assets/img/user7-128x128.jpg"
-                              alt="User Avatar"
-                            />
-
-                            <div class="contacts-list-info">
-                              <span class="contacts-list-name">
-                                Sarah Doe
-                                <small class="contacts-list-date float-end"> 2/23/2023 </small>
-                              </span>
-                              <span class="contacts-list-msg"> I will be waiting for... </span>
-                            </div>
-                            <!-- /.contacts-list-info -->
-                          </a>
-                        </li>
-                        <!-- End Contact Item -->
-                        <li>
-                          <a href="#">
-                            <img
-                              class="contacts-list-img"
-                              src="assets/img/user3-128x128.jpg"
-                              alt="User Avatar"
-                            />
-
-                            <div class="contacts-list-info">
-                              <span class="contacts-list-name">
-                                Nadia Jolie
-                                <small class="contacts-list-date float-end"> 2/20/2023 </small>
-                              </span>
-                              <span class="contacts-list-msg"> I'll call you back at... </span>
-                            </div>
-                            <!-- /.contacts-list-info -->
-                          </a>
-                        </li>
-                        <!-- End Contact Item -->
-                        <li>
-                          <a href="#">
-                            <img
-                              class="contacts-list-img"
-                              src="assets/img/user5-128x128.jpg"
-                              alt="User Avatar"
-                            />
-
-                            <div class="contacts-list-info">
-                              <span class="contacts-list-name">
-                                Nora S. Vans
-                                <small class="contacts-list-date float-end"> 2/10/2023 </small>
-                              </span>
-                              <span class="contacts-list-msg"> Where is your new... </span>
-                            </div>
-                            <!-- /.contacts-list-info -->
-                          </a>
-                        </li>
-                        <!-- End Contact Item -->
-                        <li>
-                          <a href="#">
-                            <img
-                              class="contacts-list-img"
-                              src="assets/img/user6-128x128.jpg"
-                              alt="User Avatar"
-                            />
-
-                            <div class="contacts-list-info">
-                              <span class="contacts-list-name">
-                                John K.
-                                <small class="contacts-list-date float-end"> 1/27/2023 </small>
-                              </span>
-                              <span class="contacts-list-msg"> Can I take a look at... </span>
-                            </div>
-                            <!-- /.contacts-list-info -->
-                          </a>
-                        </li>
-                        <!-- End Contact Item -->
-                        <li>
-                          <a href="#">
-                            <img
-                              class="contacts-list-img"
-                              src="assets/img/user8-128x128.jpg"
-                              alt="User Avatar"
-                            />
-
-                            <div class="contacts-list-info">
-                              <span class="contacts-list-name">
-                                Kenneth M.
-                                <small class="contacts-list-date float-end"> 1/4/2023 </small>
-                              </span>
-                              <span class="contacts-list-msg"> Never mind I found... </span>
-                            </div>
-                            <!-- /.contacts-list-info -->
-                          </a>
-                        </li>
-                        <!-- End Contact Item -->
-                      </ul>
-                      <!-- /.contacts-list -->
-                    </div>
-                    <!-- /.direct-chat-pane -->
-                  </div>
-                  <!-- /.card-body -->
-                  <div class="card-footer">
-                    <form action="#" method="post">
-                      <div class="input-group">
-                        <input
-                          type="text"
-                          name="message"
-                          placeholder="Type Message ..."
-                          class="form-control"
-                        />
-                        <span class="input-group-append">
-                          <button type="button" class="btn btn-primary">Send</button>
-                        </span>
-                      </div>
-                    </form>
-                  </div>
-                  <!-- /.card-footer-->
-                </div>
-                <!-- /.direct-chat -->
-              </div>
-              <!-- /.Start col -->
-
-              <!-- Start col -->
-              <div class="col-lg-5 connectedSortable">
-                <div class="card text-white bg-primary bg-gradient border-primary mb-4">
-                  <div class="card-header border-0">
-                    <h3 class="card-title">Sales Value</h3>
-                    <div class="card-tools">
-                      <button
-                        type="button"
-                        class="btn btn-primary btn-sm"
-                        data-lte-toggle="card-collapse"
-                      >
-                        <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
-                        <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
-                      </button>
-                    </div>
-                  </div>
-                  <div class="card-body">
-                    <div id="world-map" style="height: 220px"></div>
-                  </div>
-                  <div class="card-footer border-0">
-                    <!--begin::Row-->
-                    <div class="row">
-                      <div class="col-4 text-center">
-                        <div id="sparkline-1" class="text-dark"></div>
-                        <div class="text-white">Visitors</div>
-                      </div>
-                      <div class="col-4 text-center">
-                        <div id="sparkline-2" class="text-dark"></div>
-                        <div class="text-white">Online</div>
-                      </div>
-                      <div class="col-4 text-center">
-                        <div id="sparkline-3" class="text-dark"></div>
-                        <div class="text-white">Sales</div>
-                      </div>
-                    </div>
-                    <!--end::Row-->
-                  </div>
-                </div>
-              </div>
-              <!-- /.Start col -->
-            </div>
-            <!-- /.row (main row) -->
-          </div>
-          <!--end::Container-->
+  <!-- ============================================
+       SECTION MESSAGES D'ERREUR
+  ============================================ -->
+  @if (error && !loading) {
+    <div class="alert alert-danger mb-4">
+      <div class="d-flex align-items-center">
+        <mat-icon class="me-2">error</mat-icon>
+        <div class="flex-grow-1">
+          <strong>Erreur de chargement</strong>
+          <p class="mb-0">Impossible de charger les données du dashboard. Veuillez réessayer.</p>
         </div>
+        <button mat-button color="warn" (click)="refreshDashboard()">
+          <mat-icon>refresh</mat-icon>
+          Réessayer
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ============================================
+       SECTION ALERTES URGENTES
+  ============================================ -->
+  @if (!loading && !error && stats.alertes && 
+       (stats.alertes.produitsPerimes > 0 || stats.alertes.demandesUrgentes > 0 || stats.alertes.produitsCritiques > 0)) {
+    <div class="alertes-section mb-4">
+      <mat-card appearance="outlined" class="border-danger">
+        <mat-card-content class="py-2">
+          <div class="d-flex align-items-center">
+            <mat-icon color="warn" class="me-3">warning</mat-icon>
+            <div class="flex-grow-1">
+              <strong class="text-danger">Attention requise</strong>
+              <div class="d-flex flex-wrap gap-2 mt-1">
+                @if (stats.alertes.produitsPerimes > 0) {
+                  <a mat-raised-button color="warn" routerLink="/app/produits-sanguins" class="alert-btn">
+                    <mat-icon>inventory</mat-icon>
+                    {{ stats.alertes.produitsPerimes }} produit(s) périmé(s)
+                  </a>
+                }
+                @if (stats.alertes.demandesUrgentes > 0) {
+                  <a mat-raised-button color="accent" routerLink="/app/demandes" class="alert-btn">
+                    <mat-icon>emergency</mat-icon>
+                    {{ stats.alertes.demandesUrgentes }} demande(s) urgente(s)
+                  </a>
+                }
+                @if (stats.alertes.produitsCritiques > 0) {
+                  <a mat-stroked-button color="primary" routerLink="/app/produits-sanguins" class="alert-btn">
+                    <mat-icon>schedule</mat-icon>
+                    {{ stats.alertes.produitsCritiques }} produit(s) critique(s)
+                  </a>
+                }
+              </div>
+            </div>
+            <button mat-icon-button (click)="dismissAlerts()" matTooltip="Masquer les alertes">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- ============================================
+       SECTION CHARGEMENT
+  ============================================ -->
+  @if (loading) {
+    <div class="loading-container text-center py-5">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p class="mt-3 text-muted">Chargement des données...</p>
+    </div>
+  }
+
+  <!-- ============================================
+       SECTION STATISTIQUES PRINCIPALES
+  ============================================ -->
+  @if (!loading && !error && stats) {
+    
+    <!-- Grille des cartes de statistiques -->
+    <div class="stats-grid mb-4">
+      
+      <!-- Carte Produits Sanguins -->
+      <mat-card class="stats-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon class="me-2" color="primary">bloodtype</mat-icon>
+            Produits Sanguins
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="stat-number">{{ stats.produits.total }}</div>
+          <div class="stat-detail">
+            @if (stats.produits.disponibles > 0) {
+              <span class="text-success">{{ stats.produits.disponibles }} disponibles</span>
+            } @else {
+              <span class="text-danger">Aucun disponible</span>
+            }
+          </div>
+          <div class="stat-progress mt-3">
+            <div class="d-flex justify-content-between small mb-1">
+              <span>Disponibilité</span>
+              <span>{{ getProgressValue() }}%</span>
+            </div>
+            <mat-progress-bar 
+              mode="determinate" 
+              [value]="getProgressValue()"
+              [color]="getProgressValue() > 50 ? 'primary' : 'warn'">
+            </mat-progress-bar>
+          </div>
+          <button mat-button color="primary" routerLink="/app/produits-sanguins" class="mt-3 w-100">
+            Voir le stock
+            <mat-icon class="ms-2">arrow_forward</mat-icon>
+          </button>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Carte Demandes -->
+      <mat-card class="stats-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon class="me-2" color="accent">description</mat-icon>
+            Demandes
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="stat-number">{{ stats.demandes.total }}</div>
+          <div class="stat-detail">
+            @if (stats.demandes.enAttente > 0) {
+              <span class="text-warning">{{ stats.demandes.enAttente }} en attente</span>
+            } @else {
+              <span class="text-success">Toutes traitées</span>
+            }
+          </div>
+          <div class="stat-chips mt-3">
+            <mat-chip-set>
+              <mat-chip color="accent" selected>
+                {{ stats.demandes.validees }} validées
+              </mat-chip>
+              @if (stats.demandes.urgentes > 0) {
+                <mat-chip color="warn" selected>
+                  {{ stats.demandes.urgentes }} urgentes
+                </mat-chip>
+              }
+            </mat-chip-set>
+          </div>
+          <button mat-button color="accent" routerLink="/app/demandes" class="mt-3 w-100">
+            Gérer les demandes
+            <mat-icon class="ms-2">arrow_forward</mat-icon>
+          </button>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Carte Délivrances -->
+      <mat-card class="stats-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon class="me-2" color="success">local_shipping</mat-icon>
+            Délivrances
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="stat-number">{{ stats.delivrances.total }}</div>
+          <div class="stat-detail">
+            <span class="text-info">{{ stats.delivrances.aujourdhui }} aujourd'hui</span>
+          </div>
+          <div class="stat-info mt-3">
+            <div class="d-flex justify-content-between">
+              <span>Ce mois:</span>
+              <strong>{{ stats.delivrances.ceMois }}</strong>
+            </div>
+          </div>
+          <button mat-button color="success" routerLink="/app/delivrances" class="mt-3 w-100">
+            Voir les délivrances
+            <mat-icon class="ms-2">arrow_forward</mat-icon>
+          </button>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Carte Transfusions -->
+      <mat-card class="stats-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon class="me-2" color="warn">healing</mat-icon>
+            Transfusions
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="stat-number">{{ stats.transfusions.total }}</div>
+          <div class="stat-detail">
+            @if (stats.transfusions.avecEffets > 0) {
+              <span class="text-danger">{{ stats.transfusions.avecEffets }} avec effets</span>
+            } @else {
+              <span class="text-success">Aucun effet indésirable</span>
+            }
+          </div>
+          <div class="tolerance-stats mt-3">
+            <div class="d-flex justify-content-between small">
+              <span>Ex: {{ stats.transfusions.tolerance.EXCELLENTE }}</span>
+              <span>B: {{ stats.transfusions.tolerance.BONNE }}</span>
+              <span>M: {{ stats.transfusions.tolerance.MOYENNE }}</span>
+              <span>Mv: {{ stats.transfusions.tolerance.MAUVAISE }}</span>
+            </div>
+          </div>
+          <button mat-button color="warn" routerLink="/app/transfusions" class="mt-3 w-100">
+            Voir les transfusions
+            <mat-icon class="ms-2">arrow_forward</mat-icon>
+          </button>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- ============================================
+         SECTION GRAPHIQUES
+    ============================================ -->
+    <div class="charts-section mb-4">
+      <div class="row g-3">
+        
+        <!-- Graphique groupes sanguins -->
+        <div class="col-lg-6">
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon class="me-2">pie_chart</mat-icon>
+                Répartition par groupe sanguin
+              </mat-card-title>
+              <span class="ms-auto badge" [ngClass]="{
+                'bg-success': getGroupesTotal() > 0,
+                'bg-secondary': getGroupesTotal() === 0
+              }">
+                Total: {{ getGroupesTotal() }}
+              </span>
+            </mat-card-header>
+            <mat-card-content>
+              
+              <!-- Badges des groupes -->
+              <div class="d-flex flex-wrap gap-2 mb-3">
+                @for (groupe of stats.produits.groupes; track groupe.groupe) {
+                  <mat-chip [style.background-color]="groupe.couleur" 
+                            [style.color]="getContrastColor(groupe.couleur)">
+                    {{ groupe.groupe }}: {{ groupe.count }}
+                  </mat-chip>
+                }
+              </div>
+              
+              <!-- Conteneur du graphique -->
+              <div class="chart-container">
+                <canvas #groupeChart></canvas>
+                
+                <!-- Overlay si pas de données -->
+                @if (getGroupesTotal() === 0) {
+                  <div class="empty-chart-overlay">
+                    <mat-icon>pie_chart</mat-icon>
+                    <p class="mt-2 mb-0">Aucun produit sanguin disponible</p>
+                    <button mat-button color="primary" class="mt-3" routerLink="/app/produits-sanguins/ajouter">
+                      <mat-icon>add</mat-icon>
+                      Ajouter un produit
+                    </button>
+                  </div>
+                }
+              </div>
+              
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <!-- Graphique types de produits -->
+        <div class="col-lg-6">
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon class="me-2">bar_chart</mat-icon>
+                Stock par type de produit
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              
+              <!-- Badges des types -->
+              <div class="d-flex flex-wrap gap-2 mb-3">
+                @for (type of stats.produits.types; track type.type) {
+                  <mat-chip [style.background-color]="type.couleur" 
+                            [style.color]="getContrastColor(type.couleur)">
+                    <mat-icon>{{ type.icon }}</mat-icon>
+                    {{ type.type }}: {{ type.count }}
+                  </mat-chip>
+                }
+              </div>
+              
+              <!-- Conteneur du graphique -->
+              <div class="chart-container">
+                <canvas #typeChart></canvas>
+                
+                <!-- Overlay si pas de données -->
+                @if (getTypesTotal() === 0) {
+                  <div class="empty-chart-overlay">
+                    <mat-icon>bar_chart</mat-icon>
+                    <p class="mt-2 mb-0">Aucun produit en stock</p>
+                    <button mat-button color="primary" class="mt-3" routerLink="/app/produits-sanguins/ajouter">
+                      <mat-icon>add</mat-icon>
+                      Ajouter un produit
+                    </button>
+                  </div>
+                }
+              </div>
+              
+            </mat-card-content>
+          </mat-card>
+        </div>
+        
+      </div>
+    </div>
+
+    <!-- ============================================
+         SECTION ACTIVITÉS ET INCIDENTS
+    ============================================ -->
+    <div class="activities-section">
+      <div class="row g-3">
+        
+        <!-- Activités récentes -->
+        <div class="col-lg-8">
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon class="me-2">history</mat-icon>
+                Activités récentes
+              </mat-card-title>
+              <div class="ms-auto">
+                <button mat-button color="primary" (click)="toggleActivities()">
+                  {{ showAllActivities ? 'Réduire' : 'Voir tout' }}
+                  <mat-icon class="ms-1">{{ showAllActivities ? 'expand_less' : 'expand_more' }}</mat-icon>
+                </button>
+              </div>
+            </mat-card-header>
+            <mat-card-content>
+              
+              @if (filteredActivities.length > 0) {
+                <div class="activities-list">
+                  @for (activity of getActivitiesToShow(); track activity.id) {
+                    <div class="activity-item">
+                      <div class="activity-icon">
+                        <mat-icon [color]="activity.color">{{ activity.icon }}</mat-icon>
+                      </div>
+                      <div class="activity-content">
+                        <div class="activity-title">
+                          {{ activity.title }}
+                        </div>
+                        <div class="activity-details">
+                          @if (activity.status) {
+                            <span class="badge" [ngClass]="getStatusClass(activity.status)">
+                              {{ getStatusText(activity.status) }}
+                            </span>
+                          }
+                          <span class="text-muted ms-2">{{ activity.details }}</span>
+                        </div>
+                      </div>
+                      <div class="activity-time">
+                        {{ formatDate(activity.originalData.dateHeureDemande || 
+                                      activity.originalData.dateHeureDelivrance || 
+                                      activity.originalData.dateTransfusion) }}
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="text-center py-4 text-muted">
+                  <mat-icon class="display-1 mb-3">history</mat-icon>
+                  <p>Aucune activité récente</p>
+                </div>
+              }
+              
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <!-- Incidents transfusionnels -->
+        <div class="col-lg-4">
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon class="me-2" color="warn">warning</mat-icon>
+                Incidents transfusionnels
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              
+              <!-- Résumé des incidents -->
+              <div class="incidents-summary">
+                <div class="incident-stat">
+                  <div class="incident-number text-danger">{{ stats.incidents.total }}</div>
+                  <div class="incident-label">Total incidents</div>
+                </div>
+                <div class="incident-stat">
+                  <div class="incident-number text-success">{{ stats.incidents.valides }}</div>
+                  <div class="incident-label">Validés</div>
+                </div>
+                <div class="incident-stat">
+                  <div class="incident-number text-warning">{{ stats.incidents.nonValides }}</div>
+                  <div class="incident-label">À valider</div>
+                </div>
+              </div>
+              
+              <!-- Répartition par type -->
+              @if (stats.incidents.total > 0) {
+                <div class="incidents-by-type mt-4">
+                  <h6 class="mb-3">Répartition par type:</h6>
+                  @for (type of getIncidentsByType(); track type.name) {
+                    <div class="type-item mb-2">
+                      <div class="d-flex justify-content-between mb-1">
+                        <span>{{ type.name }}</span>
+                        <strong>{{ type.count }}</strong>
+                      </div>
+                      <mat-progress-bar 
+                        mode="determinate" 
+                        [value]="(type.count / stats.incidents.total) * 100"
+                        color="warn">
+                      </mat-progress-bar>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="text-center py-3 text-muted">
+                  <mat-icon class="mb-2">check_circle</mat-icon>
+                  <p>Aucun incident signalé</p>
+                </div>
+              }
+              
+              <!-- Bouton d'action -->
+              <button mat-raised-button color="warn" routerLink="/app/incidents" class="w-100 mt-4">
+                <mat-icon class="me-2">visibility</mat-icon>
+                Gérer les incidents
+              </button>
+              
+            </mat-card-content>
+          </mat-card>
+        </div>
+        
+      </div>
+    </div>
+  }
+
+  <!-- ============================================
+       BOUTON DE RAFRAÎCHISSEMENT FLOATING
+  ============================================ -->
+  <div class="refresh-fab">
+    <button mat-fab 
+            color="primary" 
+            (click)="refreshDashboard()" 
+            [disabled]="loading"
+            aria-label="Rafraîchir le tableau de bord"
+            matTooltip="Rafraîchir">
+      <mat-icon>{{ loading ? 'autorenew' : 'refresh' }}</mat-icon>
+    </button>
+  </div>
+
+</div>

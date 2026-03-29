@@ -1,0 +1,41 @@
+/* edit-medecin.component.scss */
+.backend-error {
+    border-left: 4px solid #dc3545;
+    background-color: #f8f9fa;
+    
+    .error-message {
+        white-space: pre-wrap;
+        font-family: inherit;
+        color: #721c24;
+        line-height: 1.4;
+    }
+    
+    .btn-close {
+        font-size: 0.75rem;
+    }
+}
+
+.btn-loading {
+    position: relative;
+    
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+    }
+}
+
+/* Animation pour l'apparition de l'erreur */
+.alert-danger {
+    animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

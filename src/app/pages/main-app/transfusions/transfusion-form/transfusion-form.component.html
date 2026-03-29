@@ -1,0 +1,942 @@
+<div class="container-fluid mt-3">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <mat-icon class="me-2">bloodtype</mat-icon>
+                Créer une transfusion 
+            </h5>
+        </div>
+        
+        <div class="card-body">
+            <!-- Indicateur de chargement -->
+            @if (loading()) {
+                <div class="text-center py-5">
+                    <mat-spinner diameter="50"></mat-spinner>
+                    <p class="mt-3 text-muted">Chargement...</p>
+                </div>
+            }
+            
+            <!-- ÉTAPE 1 : Sélection de la délivrance -->
+            @if (!selectedDelivrance() && !loading()) {
+                <div class="step-container">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <h6 class="mb-0">Sélectionnez une délivrance</h6>
+                    </div>
+                    
+                    <div class="step-content">
+                        <!-- Filtres -->
+                        <div class="row mb-4">
+                            <div class="col-md-5">
+                                <mat-form-field appearance="outline" class="w-100">
+                                    <mat-label>Rechercher</mat-label>
+                                    <input matInput 
+                                           [value]="searchTerm()"
+                                           (input)="onInputChange($event)"
+                                           placeholder="Patient, dossier, destination...">
+                                    <mat-icon matSuffix>search</mat-icon>
+                                </mat-form-field>
+                            </div>
+                            
+                            <div class="col-md-5">
+                                <mat-form-field appearance="outline" class="w-100">
+                                    <mat-label>Destination</mat-label>
+                                    <mat-select [value]="destinationFilter()" 
+                                                (selectionChange)="destinationFilter.set($event.value); filterDelivrances()">
+                                        <mat-option value="">Toutes destinations</mat-option>
+                                        @for (destination of destinations(); track destination) {
+                                            <mat-option [value]="destination">{{ destination }}</mat-option>
+                                        }
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div class="col-md-2">
+                                <button mat-button (click)="backToList()">
+                                    <mat-icon>arrow_back</mat-icon>
+                                    Retour
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Liste des délivrances -->
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="80">N°</th>
+                                        <th>Patient</th>
+                                        <th>Date</th>
+                                        <th>Produits</th>
+                                        <th>Destination</th>
+                                        <th width="150">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (delivrance of filteredDelivrances(); track delivrance.id) {
+                                        <tr [class.table-secondary]="!hasAvailableProducts(delivrance)"
+                                            [matTooltip]="!hasAvailableProducts(delivrance) ? 'Tous les produits ont été transfusés' : ''">
+                                            <td class="text-center">
+                                                <strong [class.text-primary]="hasAvailableProducts(delivrance)"
+                                                        [class.text-muted]="!hasAvailableProducts(delivrance)">
+                                                    #{{ delivrance.id }}
+                                                </strong>
+                                                @if (!hasAvailableProducts(delivrance)) {
+                                                    <span class="badge bg-success ms-1" style="font-size: 0.7em;">
+                                                        <mat-icon style="font-size: 12px; height: 12px; width: 12px;">done_all</mat-icon>
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="fw-bold">{{ delivrance.demande?.patientNom }} {{ delivrance.demande?.patientPrenom }}</div>
+                                                <div class="text-muted small">
+                                                    Dossier: {{ delivrance.demande?.patientNumDossier }}<br>
+                                                    Groupe: 
+                                                    <span class="badge bg-danger">
+                                                        {{ delivrance.demande?.groupeSanguinPatient }}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {{ formatDate(delivrance.dateHeureDelivrance) }}<br>
+                                                <small class="text-muted">{{ formatTime(delivrance.dateHeureDelivrance) }}</small>
+                                            </td>
+                                            <td>
+                                                @if (delivrance.produitsSanguins && delivrance.produitsSanguins.length > 0) {
+                                                    <div class="d-flex flex-wrap gap-1 mb-2">
+                                                        @for (produit of delivrance.produitsSanguins; track produit.id) {
+                                                            <span class="badge" 
+                                                                  [class.bg-info]="!isProductTransfused(produit)"
+                                                                  [class.bg-success]="isProductTransfused(produit)"
+                                                                  [matTooltip]="(isProductTransfused(produit) ? 'Déjà transfusé - ' : '') + produit.codeProduit + ' - ' + produit.typeProduit"
+                                                                  style="font-size: 0.8em; padding: 0.25em 0.5em;">
+                                                                {{ produit.typeProduit }}
+                                                                @if (isProductTransfused(produit)) {
+                                                                    <mat-icon style="font-size: 10px; margin-left: 2px;">check</mat-icon>
+                                                                }
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                    
+                                                    <!-- Afficher le compte des produits -->
+                                                    <div class="small">
+                                                        <div class="d-flex align-items-center">
+                                                            @if (getTransfusedProductsCount(delivrance) > 0) {
+                                                                <span class="badge bg-light text-dark me-1">
+                                                                    {{ getTransfusedProductsCount(delivrance) }} transfusé(s)
+                                                                </span>
+                                                            }
+                                                            @if (getRemainingProductsCount(delivrance) > 0) {
+                                                                <span class="badge bg-primary">
+                                                                    {{ getRemainingProductsCount(delivrance) }} restant(s)
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                } @else {
+                                                    <span class="text-muted">Aucun produit</span>
+                                                }
+                                            </td>
+                                            <td>{{ delivrance.destination }}</td>
+                                            <td>
+                                                <button mat-raised-button 
+                                                        [color]="hasAvailableProducts(delivrance) ? 'primary' : 'basic'"
+                                                        (click)="selectDelivrance(delivrance)"
+                                                        [disabled]="!hasAvailableProducts(delivrance)"
+                                                        class="w-100"
+                                                        [matTooltip]="!hasAvailableProducts(delivrance) ? 'Tous les produits ont été transfusés' : ''">
+                                                    <mat-icon class="me-1">
+                                                        {{ hasAvailableProducts(delivrance) ? 'arrow_forward' : 'check_circle' }}
+                                                    </mat-icon>
+                                                    {{ hasAvailableProducts(delivrance) ? 'Sélectionner' : 'Complète' }}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                    
+                                    @if (filteredDelivrances().length === 0) {
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4 text-muted">
+                                                <mat-icon class="display-1 mb-3">inbox</mat-icon>
+                                                <h5>Aucune délivrance trouvée</h5>
+                                                <p>Modifiez vos critères de recherche</p>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- ÉTAPE 2 : Formulaire de transfusion (Master-Detail) -->
+            @if (selectedDelivrance() && !loading()) {
+                <div class="row">
+                    <!-- COLONNE GAUCHE : MASTER - Liste des produits -->
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">
+                                        <mat-icon class="me-2" [class.text-primary]="produitsRestants()"
+                                                             [class.text-success]="!produitsRestants()">
+                                            {{ produitsRestants() ? 'inventory' : 'inventory_2' }}
+                                        </mat-icon>
+                                        Produits de la délivrance
+                                    </h6>
+                                    <small class="text-muted">
+                                        @if (produitsRestants()) {
+                                            {{ produitsDisponibles().length }} disponible(s) / 
+                                            {{ selectedDelivrance()!.produitsSanguins!.length }} total
+                                        } @else {
+                                            <span class="text-success">
+                                                Tous les produits ont été transfusés
+                                            </span>
+                                        }
+                                    </small>
+                                </div>
+                                <button mat-stroked-button 
+                                        color="secondary" 
+                                        (click)="backToStep1()"
+                                        class="btn-sm">
+                                    <mat-icon>arrow_back</mat-icon>
+                                    Retour
+                                </button>
+                            </div>
+                            
+                            <div class="card-body p-0">
+                                <!-- Produit en cours -->
+                                <div class="bg-info text-white p-3">
+                                    <div class="small">Produit en cours :</div>
+                                    @if (produitEnCours()) {
+                                        <div class="fw-bold">{{ produitEnCours()!.typeProduit }}</div>
+                                        <div class="small opacity-75">
+                                            {{ produitEnCours()!.codeProduit }} • {{ produitEnCours()!.groupeSanguin }}
+                                        </div>
+                                    } @else {
+                                        <div class="text-warning">
+                                            <mat-icon class="me-1">info</mat-icon>
+                                            Sélectionnez un produit à transfuser
+                                        </div>
+                                    }
+                                </div>
+                                
+                                <!-- Liste des produits -->
+                                <div class="list-group list-group-flush">
+                                    @for (produit of selectedDelivrance()!.produitsSanguins; track produit.id; let i = $index) {
+                                        <div class="list-group-item list-group-item-action
+                                                    {{ selectedProducts()[i] ? 'active' : '' }}
+                                                    {{ isProductTransfused(produit) ? 'list-group-item-success' : '' }}
+                                                    d-flex justify-content-between align-items-start
+                                                    py-3"
+                                             (click)="toggleProductSelection(i)">
+                                            
+                                            @if (isProductTransfused(produit)) {
+                                                <div class="position-absolute top-0 start-0 p-1">
+                                                    <mat-icon class="text-success" style="font-size: 16px;">check_circle</mat-icon>
+                                                </div>
+                                                <div class="position-absolute top-0 end-0 p-1">
+                                                    <span class="badge bg-success" style="font-size: 0.7em;">Transfusé</span>
+                                                </div>
+                                            }
+                                            
+                                            <div class="d-flex align-items-center w-100">
+                                                <!-- Indicateur de sélection -->
+                                                <div class="me-3">
+                                                    <mat-checkbox [checked]="selectedProducts()[i]"
+                                                                  (click)="$event.stopPropagation()"
+                                                                  (change)="toggleProductSelection(i)"
+                                                                  [disabled]="isProductTransfused(produit)"
+                                                                  class="m-0 p-0">
+                                                    </mat-checkbox>
+                                                </div>
+                                                
+                                                <!-- Informations du produit -->
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div class="fw-bold">{{ produit.typeProduit }}</div>
+                                                        <div class="d-flex gap-1">
+                                                            @if (isProductTransfused(produit)) {
+                                                                <mat-icon class="text-success" style="font-size: 18px;">done</mat-icon>
+                                                            }
+                                                            <small class="{{ selectedProducts()[i] ? 'text-white-75' : 'text-muted' }}">
+                                                                {{ produit.volumeMl || 'N/A' }} ml
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="small {{ selectedProducts()[i] ? 'text-white-75' : 'text-muted' }}">
+                                                        <div><strong>Code:</strong> {{ produit.codeProduit }}</div>
+                                                        <div><strong>Groupe:</strong> {{ produit.groupeSanguin }}</div>
+                                                        <div><strong>Péremption:</strong> {{ formatDate(produit.datePeremption) }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                
+                                <!-- Section produits traités -->
+                                @if (produitsTraites().length > 0) {
+                                    <div class="card mt-3">
+                                        <div class="card-header bg-success text-white py-2">
+                                            <h6 class="mb-0" style="font-size: 0.9rem;">
+                                                <mat-icon class="me-1" style="font-size: 18px;">check_circle</mat-icon>
+                                                Produits transfusés ({{ produitsTraites().length }})
+                                            </h6>
+                                        </div>
+                                        <div class="card-body py-2">
+                                            <div class="row">
+                                                @for (produitId of produitsTraites(); track produitId) {
+                                                    @let produit = findProduitById(produitId);
+                                                    @if (produit) {
+                                                        <div class="col-12 mb-1">
+                                                            <div class="d-flex align-items-center">
+                                                                <mat-icon class="text-success me-2" style="font-size: 16px;">check</mat-icon>
+                                                                <div>
+                                                                    <small class="fw-bold">{{ produit.typeProduit }}</small>
+                                                                    <div class="small text-muted">{{ produit.codeProduit }}</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            
+                            <!-- Résumé -->
+                            <div class="card-footer bg-light">
+                                <div class="small">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Produit sélectionné:</span>
+                                        <strong>{{ getSelectedProductsCount() === 1 ? 'OUI' : 'NON' }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Produits transfusés:</span>
+                                        <strong class="text-success">{{ produitsTraites().length }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Produits restants:</span>
+                                        <strong class="text-primary">{{ produitsDisponibles().length }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- COLONNE DROITE : DETAIL - Formulaire de transfusion -->
+                    <div class="col-md-8">
+                        <div class="card h-100">
+                            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-0">
+                                        <mat-icon class="me-2">bloodtype</mat-icon>
+                                        Formulaire de transfusion
+                                    </h5>
+                                    <small class="opacity-75">
+                                        @if (produitEnCours()) {
+                                            Produit: {{ produitEnCours()!.typeProduit }} ({{ produitEnCours()!.codeProduit }})
+                                        } @else {
+                                            Aucun produit sélectionné
+                                        }
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="card-body">
+                                <!-- Informations patient -->
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">
+                                            <mat-icon class="me-2 text-primary">person</mat-icon>
+                                            Informations patient
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <strong>Nom :</strong><br>
+                                                <span class="fs-5">{{ selectedDelivrance()!.demande?.patientNom }}</span>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <strong>Prénom :</strong><br>
+                                                <span class="fs-5">{{ selectedDelivrance()!.demande?.patientPrenom }}</span>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <strong>N° Dossier :</strong><br>
+                                                <code class="fs-5">{{ selectedDelivrance()!.demande?.patientNumDossier }}</code>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <strong>Groupe sanguin :</strong><br>
+                                                <span class="badge bg-danger fs-6">
+                                                    <mat-icon class="me-1">bloodtype</mat-icon>
+                                                    {{ selectedDelivrance()!.demande?.groupeSanguinPatient }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Formulaire de transfusion -->
+                                <form [formGroup]="transfusionForm">
+                                    <div class="row">
+                                        <!-- Colonne gauche : Informations transfusion -->
+                                        <div class="col-md-6">
+                                            <div class="card mb-3">
+                                                <div class="card-header">
+                                                    <h6 class="mb-0">Informations médicales</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <!-- Médecin -->
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Médecin responsable *</label>
+                                                        <div class="alert alert-info p-3">
+                                                            <div class="d-flex align-items-center">
+                                                                <mat-icon class="me-2 text-primary">badge</mat-icon>
+                                                                <div>
+                                                                    <div class="fw-bold">
+                                                                        @if (currentUser()) {
+                                                                            Dr {{ currentUser()?.prenom }} {{ currentUser()?.nom }}
+                                                                        } @else {
+                                                                            Utilisateur non connecté
+                                                                        }
+                                                                    </div>
+                                                                    @if (currentUser()?.specialite) {
+                                                                        <div class="small text-muted">
+                                                                            Spécialité : {{ currentUser()?.specialite }}
+                                                                        </div>
+                                                                    }
+                                                                    <div class="small text-muted mt-1">
+                                                                        <mat-icon class="me-1" style="font-size: 14px;">info</mat-icon>
+                                                                        Vous êtes automatiquement désigné comme médecin responsable de cette transfusion.
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <!-- Champ caché pour l'ID du médecin -->
+                                                        <input type="hidden" formControlName="medecinId">
+                                                    </div>
+
+                                                    <!-- Date et heure -->
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-6">
+                                                            <mat-form-field appearance="outline" class="w-100">
+                                                                <mat-label>Date transfusion *</mat-label>
+                                                                <input matInput [matDatepicker]="datePicker" 
+                                                                    formControlName="dateTransfusion"
+                                                                    [min]="minDate"
+                                                                    [max]="maxDate">
+                                                                <mat-datepicker-toggle matSuffix [for]="datePicker"></mat-datepicker-toggle>
+                                                                <mat-datepicker #datePicker></mat-datepicker>
+                                                                @if (transfusionForm.get('dateTransfusion')?.invalid && transfusionForm.get('dateTransfusion')?.touched) {
+                                                                    <mat-error>
+                                                                        @if (transfusionForm.get('dateTransfusion')?.errors?.['required']) {
+                                                                            La date de transfusion est requise
+                                                                        }
+                                                                        @if (transfusionForm.get('dateTransfusion')?.errors?.['futureDate']) {
+                                                                            La date ne peut pas être future
+                                                                        }
+                                                                    </mat-error>
+                                                                }
+                                                            </mat-form-field>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <mat-form-field appearance="outline" class="w-100">
+                                                                <mat-label>Heure début *</mat-label>
+                                                                <input matInput type="time" formControlName="heureDebut">
+                                                                @if (transfusionForm.get('heureDebut')?.invalid && transfusionForm.get('heureDebut')?.touched) {
+                                                                    <mat-error>
+                                                                        L'heure de début est requise
+                                                                    </mat-error>
+                                                                }
+                                                            </mat-form-field>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Volume et température -->
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-6">
+                                                            <mat-form-field appearance="outline" class="w-100">
+                                                                <mat-label>Volume (ml)</mat-label>
+                                                                <input matInput type="number" formControlName="volume" 
+                                                                       min="0" max="5000">
+                                                                @if (transfusionForm.get('volume')?.invalid && transfusionForm.get('volume')?.touched) {
+                                                                    <mat-error>
+                                                                        @if (transfusionForm.get('volume')?.errors?.['min']) {
+                                                                            Le volume doit être supérieur à 0
+                                                                        }
+                                                                        @if (transfusionForm.get('volume')?.errors?.['max']) {
+                                                                            Le volume ne peut pas dépasser 5000 ml
+                                                                        }
+                                                                    </mat-error>
+                                                                }
+                                                            </mat-form-field>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <mat-form-field appearance="outline" class="w-100">
+                                                                <mat-label>Température produit (°C)</mat-label>
+                                                                <input matInput type="number" formControlName="temperatureProduit" 
+                                                                       min="1" max="40" step="0.1">
+                                                                @if (transfusionForm.get('temperatureProduit')?.invalid && transfusionForm.get('temperatureProduit')?.touched) {
+                                                                    <mat-error>
+                                                                        La température doit être entre 1°C et 40°C
+                                                                    </mat-error>
+                                                                }
+                                                            </mat-form-field>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- État et tolérance -->
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Tolérance *</label>
+                                                        <div class="d-flex gap-2">
+                                                            <button mat-stroked-button 
+                                                                    type="button"
+                                                                    [class.btn-success]="transfusionForm.get('tolerance')?.value === 'Bonne'"
+                                                                    [class.btn-outline-secondary]="transfusionForm.get('tolerance')?.value !== 'Bonne'"
+                                                                    (click)="transfusionForm.get('tolerance')?.setValue('Bonne')">
+                                                                <mat-icon>thumb_up</mat-icon>
+                                                                Bonne
+                                                            </button>
+                                                            <button mat-stroked-button 
+                                                                    type="button"
+                                                                    [class.btn-danger]="transfusionForm.get('tolerance')?.value === 'Mauvaise'"
+                                                                    [class.btn-outline-secondary]="transfusionForm.get('tolerance')?.value !== 'Mauvaise'"
+                                                                    (click)="transfusionForm.get('tolerance')?.setValue('Mauvaise')">
+                                                                <mat-icon>thumb_down</mat-icon>
+                                                                Mauvaise
+                                                            </button>
+                                                        </div>
+                                                        @if (transfusionForm.get('tolerance')?.invalid && transfusionForm.get('tolerance')?.touched) {
+                                                            <div class="text-danger small mt-1">
+                                                                La tolérance est requise
+                                                            </div>
+                                                        }
+                                                    </div>
+
+                                                    <!-- État patient -->
+                                                    <mat-form-field appearance="outline" class="w-100">
+                                                        <mat-label>État après transfusion *</mat-label>
+                                                        <mat-select formControlName="etatPatientApres">
+                                                            <mat-option value="">Sélectionner</mat-option>
+                                                            <mat-option value="Stable">Stable</mat-option>
+                                                            <mat-option value="Amélioré">Amélioré</mat-option>
+                                                            <mat-option value="Stationnaire">Stationnaire</mat-option>
+                                                            <mat-option value="Dégradé">Dégradé</mat-option>
+                                                            <mat-option value="Critique">Critique</mat-option>
+                                                        </mat-select>
+                                                        @if (transfusionForm.get('etatPatientApres')?.invalid && transfusionForm.get('etatPatientApres')?.touched) {
+                                                            <mat-error>
+                                                                L'état du patient après transfusion est requis
+                                                            </mat-error>
+                                                        }
+                                                    </mat-form-field>
+
+                                                    <!-- Effets indésirables -->
+                                                    <div class="mt-3">
+                                                        <mat-checkbox formControlName="effetsIndesirables">
+                                                            Effets indésirables observés
+                                                        </mat-checkbox>
+                                                    </div>
+
+                                                    @if (transfusionForm.get('effetsIndesirables')?.value) {
+                                                        <div class="alert alert-warning mt-3 p-3">
+                                                            <div class="row">
+                                                                <div class="col-md-6">
+                                                                    <mat-form-field appearance="outline" class="w-100">
+                                                                        <mat-label>Type d'effet *</mat-label>
+                                                                        <input matInput formControlName="typeEffet" 
+                                                                               placeholder="Ex: Frissons, Fièvre..." required>
+                                                                        @if (transfusionForm.get('typeEffet')?.invalid && transfusionForm.get('typeEffet')?.touched) {
+                                                                            <mat-error>
+                                                                                Le type d'effet est requis
+                                                                            </mat-error>
+                                                                        }
+                                                                    </mat-form-field>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <mat-form-field appearance="outline" class="w-100">
+                                                                        <mat-label>Gravité *</mat-label>
+                                                                        <mat-select formControlName="graviteEffet" required>
+                                                                            <mat-option value="">Sélectionner</mat-option>
+                                                                            <mat-option value="Légère">Légère</mat-option>
+                                                                            <mat-option value="Modérée">Modérée</mat-option>
+                                                                            <mat-option value="Sévère">Sévère</mat-option>
+                                                                            <mat-option value="Critique">Critique</mat-option>
+                                                                        </mat-select>
+                                                                        @if (transfusionForm.get('graviteEffet')?.invalid && transfusionForm.get('graviteEffet')?.touched) {
+                                                                            <mat-error>
+                                                                                La gravité est requise
+                                                                            </mat-error>
+                                                                        }
+                                                                    </mat-form-field>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Colonne droite : Surveillance et Déclarant -->
+                                        <div class="col-md-6">
+                                            <!-- Surveillance -->
+                                            <div class="card mb-3">
+                                                <div class="card-header d-flex justify-content-between align-items-center">
+                                                    <h6 class="mb-0">
+                                                        <mat-icon class="me-2">monitor_heart</mat-icon>
+                                                        Surveillance
+                                                    </h6>
+                                                    <button mat-stroked-button type="button" 
+                                                            (click)="ajouterSurveillance()"
+                                                            color="primary">
+                                                        <mat-icon>add</mat-icon>
+                                                        Ajouter
+                                                    </button>
+                                                </div>
+                                                <div class="card-body">
+                                                    <!-- Liste des surveillances -->
+                                                    <div class="surveillance-list">
+                                                        @for (surveillance of surveillances(); track $index; let i = $index) {
+                                                            <div class="surveillance-item border rounded p-3 mb-3">
+                                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                    <h6 class="mb-0 text-primary">
+                                                                        <mat-icon class="me-1">schedule</mat-icon>
+                                                                        Surveillance #{{ i + 1 }}
+                                                                    </h6>
+                                                                    <button mat-icon-button 
+                                                                            color="warn"
+                                                                            (click)="supprimerSurveillance(i)"
+                                                                            [disabled]="surveillances().length <= 1">
+                                                                        <mat-icon>delete</mat-icon>
+                                                                    </button>
+                                                                </div>
+                                                                
+                                                                <div class="row mb-2">
+                                                                    <div class="col-md-6">
+                                                                        <mat-form-field appearance="outline" class="w-100">
+                                                                            <mat-label>Heure *</mat-label>
+                                                                            <input matInput type="time" 
+                                                                                   [(ngModel)]="surveillances()[i].heure"
+                                                                                   [ngModelOptions]="{standalone: true}"
+                                                                                   required>
+                                                                            @if (showValidationErrors && (!surveillances()[i].heure || surveillances()[i].heure.trim() === '')) {
+                                                                                <mat-error>
+                                                                                    L'heure est requise
+                                                                                </mat-error>
+                                                                            }
+                                                                        </mat-form-field>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <mat-form-field appearance="outline" class="w-100">
+                                                                            <mat-label>Pouls (bpm) *</mat-label>
+                                                                            <input matInput type="number" 
+                                                                                   [(ngModel)]="surveillances()[i].pouls"
+                                                                                   [ngModelOptions]="{standalone: true}"
+                                                                                   min="30"
+                                                                                   max="250"
+                                                                                   required>
+                                                                            @if (showValidationErrors && (surveillances()[i].pouls === null || surveillances()[i].pouls === undefined || surveillances()[i].pouls === 0)) {
+                                                                                <mat-error>
+                                                                                    Le pouls est requis
+                                                                                </mat-error>
+                                                                            }
+                                                                            @if (showValidationErrors && surveillances()[i].pouls) {
+                                                                                <mat-error>
+                                                                                    Doit être entre 30 et 250 bpm
+                                                                                </mat-error>
+                                                                            }
+                                                                        </mat-form-field>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <div class="row mb-2">
+                                                                    <div class="col-md-6">
+                                                                        <mat-form-field appearance="outline" class="w-100">
+                                                                            <mat-label>Température (°C) *</mat-label>
+                                                                            <input matInput type="number" step="0.1"
+                                                                                   [(ngModel)]="surveillances()[i].temperature"
+                                                                                   [ngModelOptions]="{standalone: true}"
+                                                                                   min="30"
+                                                                                   max="45"
+                                                                                   required>
+                                                                            @if (showValidationErrors && (surveillances()[i].temperature === null || surveillances()[i].temperature === undefined || surveillances()[i].temperature === 0)) {
+                                                                                <mat-error>
+                                                                                    La température est requise
+                                                                                </mat-error>
+                                                                            }
+                                                                            @if (showValidationErrors && surveillances()[i].temperature) {
+                                                                                <mat-error>
+                                                                                    Doit être entre 30°C et 45°C
+                                                                                </mat-error>
+                                                                            }
+                                                                        </mat-form-field>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <mat-form-field appearance="outline" class="w-100">
+                                                                            <mat-label>Tension artérielle</mat-label>
+                                                                            <input matInput 
+                                                                                   [(ngModel)]="surveillances()[i].tension"
+                                                                                   [ngModelOptions]="{standalone: true}"
+                                                                                   placeholder="Ex: 120/80"
+                                                                                   (blur)="validateTensionFormat(i)"
+                                                                                   pattern="^\d{2,3}/\d{2,3}$">
+                                                                            <mat-hint>Format: systolique/diastolique (ex: 120/80)</mat-hint>
+                                                                            @if (showValidationErrors && tensionHasError(i)) {
+                                                                                <mat-error>
+                                                                                    Format invalide. Utilisez: systolique/diastolique
+                                                                                </mat-error>
+                                                                            }
+                                                                        </mat-form-field>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <mat-form-field appearance="outline" class="w-100">
+                                                                    <mat-label>Signes cliniques</mat-label>
+                                                                    <input matInput 
+                                                                           [(ngModel)]="surveillances()[i].signesCliniques"
+                                                                           [ngModelOptions]="{standalone: true}"
+                                                                           placeholder="Ex: Cyanose, sudation...">
+                                                                </mat-form-field>
+                                                                
+                                                                <mat-form-field appearance="outline" class="w-100">
+                                                                    <mat-label>Observations</mat-label>
+                                                                    <textarea matInput rows="2"
+                                                                              [(ngModel)]="surveillances()[i].observations"
+                                                                              [ngModelOptions]="{standalone: true}"></textarea>
+                                                                </mat-form-field>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                    
+                                                    @if (showValidationErrors && !validateSurveillancesCount()) {
+                                                        <div class="alert alert-danger p-2 mb-0 mt-2">
+                                                            <mat-icon class="me-1" style="font-size: 16px;">error</mat-icon>
+                                                            Au moins une surveillance est requise
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            <!-- Déclarant -->
+                                            <div class="card mb-3">
+                                                <div class="card-header">
+                                                    <h6 class="mb-0">
+                                                        <mat-icon class="me-2">assignment_ind</mat-icon>
+                                                        Déclarant
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row mb-2">
+                                                        <div class="col-md-6">
+                                                            <mat-form-field appearance="outline" class="w-100">
+                                                                <mat-label>Prénom *</mat-label>
+                                                                <input matInput formControlName="prenomDeclarant">
+                                                                @if (transfusionForm.get('prenomDeclarant')?.invalid && transfusionForm.get('prenomDeclarant')?.touched) {
+                                                                    <mat-error>
+                                                                        Le prénom du déclarant est requis
+                                                                    </mat-error>
+                                                                }
+                                                            </mat-form-field>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <mat-form-field appearance="outline" class="w-100">
+                                                                <mat-label>Nom *</mat-label>
+                                                                <input matInput formControlName="nomDeclarant">
+                                                                @if (transfusionForm.get('nomDeclarant')?.invalid && transfusionForm.get('nomDeclarant')?.touched) {
+                                                                    <mat-error>
+                                                                        Le nom du déclarant est requis
+                                                                    </mat-error>
+                                                                }
+                                                            </mat-form-field>
+                                                        </div>
+                                                    </div>
+                                                    <mat-form-field appearance="outline" class="w-100">
+                                                        <mat-label>Fonction *</mat-label>
+                                                        <input matInput formControlName="fonctionDeclarant">
+                                                        @if (transfusionForm.get('fonctionDeclarant')?.invalid && transfusionForm.get('fonctionDeclarant')?.touched) {
+                                                            <mat-error>
+                                                                La fonction du déclarant est requise
+                                                            </mat-error>
+                                                        }
+                                                    </mat-form-field>
+                                                </div>
+                                            </div>
+
+                                            <!-- Notes -->
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h6 class="mb-0">
+                                                        <mat-icon class="me-2">note</mat-icon>
+                                                        Notes
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <mat-form-field appearance="outline" class="w-100">
+                                                        <mat-label>Observations cliniques</mat-label>
+                                                        <textarea matInput rows="3" 
+                                                                  formControlName="observations"
+                                                                  placeholder="Observations cliniques..."></textarea>
+                                                    </mat-form-field>
+                                                    
+                                                    <mat-form-field appearance="outline" class="w-100">
+                                                        <mat-label>Notes supplémentaires</mat-label>
+                                                        <textarea matInput rows="3" 
+                                                                  formControlName="notes"
+                                                                  placeholder="Notes supplémentaires..."></textarea>
+                                                    </mat-form-field>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <!-- Pied de page avec actions -->
+                            <div class="card-footer bg-light">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <button mat-stroked-button 
+                                            color="secondary" 
+                                            (click)="backToStep1()">
+                                        <mat-icon>arrow_back</mat-icon>
+                                        Changer de délivrance
+                                    </button>
+                                    
+                                    <div class="d-flex gap-2">
+                                        <!-- Bouton Arrêter et déclarer incident -->
+                                        <button mat-stroked-button 
+                                                color="warn"
+                                                (click)="arreterTransfusionEtDeclarerIncident()"
+                                                [disabled]="!isFormValidForIncident() || saving() || arretEnCours()"
+                                                class="me-2">
+                                            <mat-icon>warning</mat-icon>
+                                            @if (arretEnCours()) {
+                                                Traitement...
+                                            } @else {
+                                                Arrêter et déclarer incident
+                                            }
+                                        </button>
+                                        
+                                        <!-- Bouton pour préparer produit suivant -->
+                                        @if (produitsRestants() && produitsTraites().length > 0) {
+                                            <button mat-stroked-button 
+                                                    color="primary"
+                                                    (click)="preparerProduitSuivant()"
+                                                    [disabled]="saving()">
+                                                <mat-icon>skip_next</mat-icon>
+                                                Produit suivant
+                                            </button>
+                                        }
+                                        
+                                        <!-- Bouton principal : Transfuser le produit -->
+                                        <button mat-raised-button 
+                                                color="success"
+                                                (click)="transfuserProduitSelectionne()"
+                                                [disabled]="!isFormValidForTransfusion() || saving()">
+                                            <mat-icon>check</mat-icon>
+                                            @if (saving()) {
+                                                Création en cours...
+                                            } @else {
+                                                Transfuser ce produit
+                                            }
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Messages d'information -->
+                                @if (arretEnCours()) {
+                                    <div class="alert alert-warning mt-3 mb-0">
+                                        <div class="d-flex align-items-center">
+                                            <mat-icon class="me-2">warning</mat-icon>
+                                            <div class="flex-grow-1">
+                                                <strong>Arrêt de transfusion en cours</strong>
+                                                <div class="small">Redirection vers la déclaration d'incident...</div>
+                                            </div>
+                                            <mat-spinner diameter="20"></mat-spinner>
+                                        </div>
+                                    </div>
+                                }
+                                
+                                <!-- Afficher les erreurs de validation -->
+                                @if (showValidationErrors && (!isFormValidForTransfusion() || !isFormValidForIncident())) {
+                                    <div class="alert alert-danger mt-3 mb-0">
+                                        <h6 class="mb-2">
+                                            <mat-icon class="me-1">error</mat-icon>
+                                            Formulaire incomplet
+                                        </h6>
+                                        <ul class="mb-0 small">
+                                            @if (!selectedDelivrance()) {
+                                                <li>Sélectionnez une délivrance</li>
+                                            }
+                                            @if (!isProduitUniqueSelectionne()) {
+                                                <li>Sélectionnez un produit unique à transfuser</li>
+                                            }
+                                            @if (!transfusionForm.get('dateTransfusion')?.value) {
+                                                <li>La date de transfusion est requise</li>
+                                            }
+                                            @if (transfusionForm.get('dateTransfusion')?.errors?.['futureDate']) {
+                                                <li>La date de transfusion ne peut pas être future</li>
+                                            }
+                                            @if (!transfusionForm.get('heureDebut')?.value) {
+                                                <li>L'heure de début est requise</li>
+                                            }
+                                            @if (!transfusionForm.get('etatPatientApres')?.value) {
+                                                <li>L'état du patient après transfusion est requis</li>
+                                            }
+                                            @if (transfusionForm.get('volume')?.errors?.['min'] || transfusionForm.get('volume')?.errors?.['max']) {
+                                                <li>Le volume doit être entre 0 et 5000 ml</li>
+                                            }
+                                            @if (transfusionForm.get('temperatureProduit')?.errors?.['range']) {
+                                                <li>La température doit être entre 1°C et 40°C</li>
+                                            }
+                                            @if (transfusionForm.get('prenomDeclarant')?.invalid) {
+                                                <li>Le prénom du déclarant est requis</li>
+                                            }
+                                            @if (transfusionForm.get('nomDeclarant')?.invalid) {
+                                                <li>Le nom du déclarant est requis</li>
+                                            }
+                                            @if (transfusionForm.get('fonctionDeclarant')?.invalid) {
+                                                <li>La fonction du déclarant est requise</li>
+                                            }
+                                            @if (!validateSurveillancesCount()) {
+                                                <li>Au moins une surveillance est requise</li>
+                                            }
+                                            @if (!validateSurveillancesFields()) {
+                                                <li>Toutes les surveillances doivent être complètes</li>
+                                            }
+                                            @if (transfusionForm.get('effetsIndesirables')?.value && (!transfusionForm.get('typeEffet')?.value || !transfusionForm.get('graviteEffet')?.value)) {
+                                                <li>Le type et la gravité des effets indésirables sont requis</li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                                
+                                <!-- Section de finalisation -->
+                                @if (!produitsRestants() && produitsTraites().length > 0) {
+                                    <div class="alert alert-success mt-3 mb-0">
+                                        <div class="d-flex align-items-center">
+                                            <mat-icon class="me-2">done_all</mat-icon>
+                                            <div class="flex-grow-1">
+                                                <strong>Tous les produits ont été transfusés !</strong>
+                                                <div class="small">Vous avez créé {{ produitsTraites().length }} transfusion(s).</div>
+                                            </div>
+                                            <button mat-raised-button 
+                                                    color="primary"
+                                                    (click)="terminerEtRevenir()">
+                                                <mat-icon>done_all</mat-icon>
+                                                Terminer
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

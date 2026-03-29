@@ -1,0 +1,787 @@
+<div class="container-fluid mt-3">
+  <!-- En-tête avec statistiques -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card bg-light">
+        <div class="card-body py-3">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h4 class="mb-0">
+                <mat-icon class="me-2 text-success">inventory_2</mat-icon>
+                Gestion des Délivrances
+              </h4>
+              <small class="text-muted">
+                {{ delivrances()?.length || 0 }} délivrance(s) enregistrée(s)
+              </small>
+            </div>
+            <div class="col-md-6 text-end">
+              <button mat-stroked-button 
+                      color="primary" 
+                      (click)="refreshDelivrances()"
+                      [disabled]="loadingIndicator()"
+                      class="me-2">
+                <mat-icon>refresh</mat-icon>
+                Rafraîchir
+              </button>
+              <button mat-raised-button color="primary" 
+                      (click)="openDelivranceModal(delivranceModalTemplate)" 
+                      class="me-2"
+                      [disabled]="loadingIndicator() || demandesValidees().length === 0"
+                      *ngIf="authService.canCreateDelivrance()">
+                <mat-icon>add</mat-icon> 
+                Nouvelle Délivrance
+              </button>
+
+              <button mat-stroked-button color="accent" 
+                      (click)="exportToExcel()"
+                      [disabled]="loadingIndicator() || delivrances().length === 0">
+                <mat-icon>download</mat-icon> 
+                Exporter Excel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Indicateur de chargement -->
+  @if (loadingIndicator()) {
+    <div class="text-center py-5">
+      <div class="mb-3">
+        <mat-spinner diameter="50" class="mx-auto"></mat-spinner>
+      </div>
+      <p class="text-muted">Chargement des délivrances...</p>
+    </div>
+  }
+
+  <!-- Tableau des délivrances -->
+  @if (!loadingIndicator()) {
+    <div class="card">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table mat-table [dataSource]="dataSource" matSort class="w-100">
+            
+            <!-- Colonne Informations Demande -->
+            <ng-container matColumnDef="demandeInfo">
+              <th mat-header-cell *matHeaderCellDef class="ps-3">
+                <mat-icon class="me-2">person</mat-icon>
+                Patient & Demande
+              </th>
+              <td mat-cell *matCellDef="let delivrance" class="ps-3">
+                <div class="d-flex flex-column">
+                  <strong class="text-primary">
+                    {{ delivrance.demande?.patientPrenom }} {{ delivrance.demande?.patientNom }}
+                  </strong>
+                  <small class="text-muted">
+                    {{ delivrance.demande?.serviceDemandeur }} • 
+                    {{ delivrance.demande?.typeProduitDemande }}
+                  </small>
+                  <div class="mt-1">
+                    <span class="badge bg-danger">
+                      <mat-icon class="me-1" style="font-size: 14px;">bloodtype</mat-icon>
+                      {{ delivrance.demande?.groupeSanguinPatient || 'N/A' }}
+                    </span>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Informations Produits -->
+            <ng-container matColumnDef="produitsInfo">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-icon class="me-2">bloodtype</mat-icon>
+                Produits Délivrés
+              </th>
+              <td mat-cell *matCellDef="let delivrance">
+                <div class="d-flex flex-column">
+                  <div class="mb-1">
+                    <strong>{{ delivrance.produitsSanguins?.length || 0 }} produit(s)</strong>
+                  </div>
+                  <div class="mb-1">
+                    <small class="text-muted">
+                      {{ getProduitsDisplay(delivrance.produitsSanguins || []) }}
+                    </small>
+                  </div>
+                  <div>
+                    <span class="badge bg-info">
+                      {{ getGroupeSanguinDisplay(delivrance) }}
+                    </span>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Date Délivrance -->
+            <ng-container matColumnDef="dateHeureDelivrance">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                <mat-icon class="me-2">event</mat-icon>
+                Date Délivrance
+              </th>
+              <td mat-cell *matCellDef="let delivrance">
+                {{ delivrance.dateHeureDelivrance | date:'dd/MM/yyyy HH:mm' }}
+              </td>
+            </ng-container>
+
+            <!-- Colonne Personnel -->
+            <ng-container matColumnDef="personnel">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-icon class="me-2">badge</mat-icon>
+                Personnel
+              </th>
+              <td mat-cell *matCellDef="let delivrance">
+                @if (delivrance.personnel) {
+                  <div class="d-flex align-items-center">
+                    <mat-icon class="me-2 text-info">person</mat-icon>
+                    <div>
+                      <strong>{{ delivrance.personnel.prenom }} {{ delivrance.personnel.nom }}</strong>
+                      <br>
+                      <small class="text-muted">{{ delivrance.personnel.fonction }}</small>
+                    </div>
+                  </div>
+                } @else {
+                  <span class="text-muted">Non spécifié</span>
+                }
+              </td>
+            </ng-container>
+
+            <!-- Colonne Destination -->
+            <ng-container matColumnDef="destination">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-icon class="me-2">place</mat-icon>
+                Destination
+              </th>
+              <td mat-cell *matCellDef="let delivrance">
+                {{ delivrance.destination }}
+                <br>
+                <small class="text-muted">{{ delivrance.modeTransport }}</small>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Actions -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef class="text-end pe-3">
+                Actions
+              </th>
+              <td mat-cell *matCellDef="let delivrance" class="text-end pe-3">
+                <!-- Bouton Voir détails - Tous peuvent voir -->
+                <button mat-icon-button 
+                        color="primary" 
+                        matTooltip="Voir détails"
+                        (click)="voirDetailsDelivrance(delivrance)"
+                        class="me-2">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                
+                <!-- Bouton Créer transfusion - MÉDECIN et Super Users -->
+                @if (authService.canCreateTransfusion()) {
+                  <button mat-icon-button 
+                          color="accent" 
+                          matTooltip="Créer transfusion"
+                          (click)="creerTransfusionDepuisDelivrance(delivrance)"
+                          class="me-2"
+                          [disabled]="!canCreateTransfusionFromDelivrance(delivrance)">
+                    <mat-icon>bloodtype</mat-icon>
+                  </button>
+                }
+                
+                <!-- Bouton Modifier - PERSONNEL (ses propres) et Super Users -->
+                @if (authService.canUpdateDelivrance(delivrance)) {
+                  <button mat-icon-button 
+                          color="warning" 
+                          matTooltip="Modifier"
+                          (click)="modifierDelivrance(delivrance)"
+                          [disabled]="savingIndicator()"
+                          class="me-2">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                }
+                
+                <!-- Bouton Supprimer - Seulement Super Users -->
+                @if (authService.canDeleteDelivrance()) {
+                  <button mat-icon-button 
+                          color="warn" 
+                          matTooltip="Supprimer"
+                          (click)="deleteDelivrance(delivrance)"
+                          [disabled]="savingIndicator()">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                }
+                
+                <!-- Message si pas de droits pour les actions -->
+                @if (!authService.canUpdateDelivrance(delivrance) && 
+                    !authService.canCreateTransfusion() && 
+                    !authService.canDeleteDelivrance()) {
+                  <span class="text-muted small">
+                    <mat-icon class="me-1" style="font-size: 16px;">visibility</mat-icon>
+                    Consultation seulement
+                  </span>
+                }
+              </td>
+            </ng-container>
+
+            <!-- En-tête et lignes -->
+            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-light"></tr>
+            <tr mat-row 
+                *matRowDef="let row; columns: displayedColumns;" 
+                class="hover-row"></tr>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <mat-paginator [pageSize]="10" 
+                      [pageSizeOptions]="[5, 10, 25, 50]" 
+                      showFirstLastButtons
+                      class="border-top">
+        </mat-paginator>
+
+        <!-- Message si aucune délivrance -->
+        @if (delivrances().length === 0 && !loadingIndicator()) {
+          <div class="text-center py-5 text-muted">
+            <mat-icon class="display-1 text-muted mb-3">inventory_2</mat-icon>
+            <h5>Aucune délivrance enregistrée</h5>
+            <p>
+              Aucune délivrance n'a été enregistrée pour le moment.
+              @if (demandesValidees().length > 0) {
+                <a href="javascript:void(0)" 
+                   (click)="openDelivranceModal(delivranceModalTemplate)"
+                   class="text-primary text-decoration-none">
+                  Créer la première délivrance
+                </a>
+              } @else {
+                <span class="text-warning">Aucune demande validée disponible</span>
+              }
+            </p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Indicateur de sauvegarde -->
+  @if (savingIndicator()) {
+    <div class="position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 1060;">
+      <div class="alert alert-info d-flex align-items-center shadow">
+        <mat-spinner diameter="20" class="me-2"></mat-spinner>
+        <span>Traitement en cours...</span>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Template de la modale de création de délivrance -->
+<ng-template #delivranceModalTemplate>
+  <div class="neon-modal-backdrop" (click)="closeModal()">
+    <div class="neon-modal-panel" (click)="$event.stopPropagation()">
+
+      <!-- HEADER  -->
+      <header class="neon-header">
+        <mat-icon class="neon-icon">inventory_2</mat-icon>
+        <h2>Nouvelle délivrance</h2>
+        <button class="neon-close" (click)="closeModal()" aria-label="Fermer">
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+
+      <!-- STEPPER  -->
+      <div class="neon-stepper">
+        <div class="step" [class.active]="step()===1" [class.done]="step()>1">
+          <span class="bullet">1</span>
+          <small>Demande</small>
+        </div>
+        <div class="step" [class.active]="step()===2" [class.done]="step()>2">
+          <span class="bullet">2</span>
+          <small>Produits</small>
+        </div>
+        <div class="step" [class.active]="step()===3">
+          <span class="bullet">3</span>
+          <small>Récap</small>
+        </div>
+      </div>
+
+      <!-- DYNAMIQUE BODY  -->
+      <main class="neon-body">
+
+        <!-- ÉTAPE 1  -->
+        @if(step()===1){
+        <section class="neon-step-content">
+          <h3>Rechercher une demande validée</h3>
+
+          <mat-form-field appearance="fill" class="neon-search">
+            <mat-label>Nom, service, groupe sanguin…</mat-label>
+            <input matInput [(ngModel)]="searchTerm" 
+                   (input)="onSearchTermChange($event)"
+                   placeholder="Ex : Dupont, Cardio, O+"/>
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+
+          <!-- Cartes demandes  -->
+          <div class="neon-cards-container">
+            @for (d of getDemandesFiltreesAvecStock(); track d.id) {
+            <div class="neon-card demande"
+                 [class.selected]="selectedDemande()?.id===d.id"
+                 tabindex="0"
+                 (click)="selectDemandeInModal(d)"
+                 (keyup.enter)="selectDemandeInModal(d)">
+              <div class="neon-glow-ring"></div>
+              <div class="content">
+                <h4>{{ d.patientPrenom }} {{ d.patientNom }}</h4>
+                <p>{{ d.serviceDemandeur }} • {{ d.typeProduitDemande }}</p>
+                <div class="badges">
+                  <span class="bg-danger">{{ d.groupeSanguinPatient }}</span>
+                  <span class="bg-success">{{ getProduitsCompatibles(d).length }} produit(s)</span>
+                </div>
+              </div>
+              <mat-icon class="check">check_circle</mat-icon>
+            </div>
+            }
+          </div>
+
+          @if (getDemandesFiltreesAvecStock().length === 0) {
+            <div class="neon-empty">
+              <mat-icon>search_off</mat-icon>
+              <p>Aucune demande ne correspond à votre recherche</p>
+            </div>
+          }
+        </section>
+        }
+
+        <!-- ÉTAPE 2  -->
+        @if(step()===2){
+        <section class="neon-step-content">
+          <h3>Sélectionner les produits compatibles</h3>
+
+          <!-- Barre de recherche + bouton Retour -->
+          <div class="neon-sub-header">
+            <button mat-stroked-button color="primary" (click)="step.set(1)" class="neon-back-btn">
+              <mat-icon>arrow_back</mat-icon> Retour
+            </button>
+            <div class="spacer"></div>
+            <mat-form-field appearance="outline" class="neon-search">
+              <mat-label>Rechercher un produit…</mat-label>
+              <input matInput [(ngModel)]="produitSearchTerm" 
+                     (input)="onProduitSearchTermChange($event)"
+                     placeholder="Code, type, groupe, date…"/>
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <!-- Liste des produits filtrés -->
+          <div class="neon-cards-container produits">
+            @for (p of getProduitsCompatibles(selectedDemande()!); track p.id) {
+              @let compatible = estProduitCompatible(p, selectedDemande()!);
+              @let perime = !estProduitNonPerime(p);
+              @let selected = isProduitSelected(p);
+              
+              <div class="neon-card produit"
+                  [class.selected]="selected"
+                  [class.compatible]="compatible && !perime"
+                  [class.incompatible]="!compatible && !perime"
+                  [class.expired]="perime"
+                  tabindex="0"
+                  (click)="toggleProduitSelection(p)"
+                  (keyup.enter)="toggleProduitSelection(p)">
+                
+                <div class="neon-glow-ring"></div>
+                <div class="content">
+                  <h4>{{ p.codeProduit }}</h4>
+                  <p>{{ p.typeProduit }} • {{ p.groupeSanguin }}{{ p.rhesus }}</p>
+                  <small [class.text-danger]="perime" [class.text-warning]="!compatible && !perime">
+                    Expire : {{ p.datePeremption | date:'dd/MM/yyyy' }}
+                    
+                    <!-- Badges d'état -->
+                    @if (perime) {
+                      <span class="badge bg-danger ms-1">PÉRIMÉ</span>
+                    } @else if (!compatible) {
+                      <span class="badge bg-warning ms-1">INCOMPATIBLE</span>
+                    } @else {
+                      <span class="badge bg-success ms-1">COMPATIBLE</span>
+                    }
+                  </small>
+                  
+                  <!-- Message d'incompatibilité -->
+                  @if (!compatible && !perime) {
+                    <div class="incompatibility-warning">
+                      <mat-icon>warning</mat-icon>
+                      <span>Incompatible avec {{ selectedDemande()?.groupeSanguinPatient }}</span>
+                    </div>
+                  }
+                </div>
+                
+                <mat-icon class="check" *ngIf="selected">check_circle</mat-icon>
+              </div>
+            }
+          </div>
+
+          @if(getProduitsCompatibles(selectedDemande()!).length === 0){
+            <div class="neon-empty">
+              <mat-icon>search_off</mat-icon>
+              <p>Aucun produit compatible disponible</p>
+            </div>
+          }
+
+          <!-- Barre de sélection -->
+          @if(selectedProduits().length > 0){
+            <div class="neon-selection-bar">
+              <span>{{ selectedProduits().length }} produit(s) sélectionné(s)</span>
+              <button mat-raised-button color="primary" (click)="step.set(3)">Continuer</button>
+            </div>
+          }
+        </section>
+        }
+
+        <!-- ÉTAPE 3  -->
+        @if(step()===3){
+        <section class="neon-step-content">
+          <h3>Récapitulatif</h3>
+
+          <div class="neon-recap">
+            <div class="bloc">
+              <h4>Patient</h4>
+              <p>{{ selectedDemande()?.patientPrenom }} {{ selectedDemande()?.patientNom }}</p>
+              <span class="badge bg-danger">{{ selectedDemande()?.groupeSanguinPatient }}</span>
+            </div>
+
+            <div class="bloc">
+              <h4>Produits à délivrer</h4>
+              <ul>
+                @for(p of selectedProduits(); track p.id){
+                <li>{{ p.codeProduit }} – {{ p.typeProduit }} {{ p.groupeSanguin }}{{ p.rhesus }}</li>
+                }
+              </ul>
+            </div>
+
+            <div class="bloc">
+              <h4>Destination</h4>
+              <p>{{ selectedDemande()?.serviceDemandeur }}</p>
+            </div>
+          </div>
+
+          <div class="neon-actions">
+            <button mat-stroked-button (click)="step.set(2)">Retour</button>
+            <button mat-raised-button color="primary" (click)="creerDelivrance()"
+                    [disabled]="savingIndicator()">
+              <mat-icon>check</mat-icon>
+              Confirmer la délivrance
+            </button>
+          </div>
+        </section>
+        }
+      </main>
+    </div>
+  </div>
+</ng-template>
+
+<!-- Template de la modale de détails -->
+<ng-template #detailsModalTemplate>
+  <div class="modal-backdrop" (click)="closeDetailsModal()">
+    <div class="modal-panel modal-lg" (click)="$event.stopPropagation()">
+      
+      <!-- Header -->
+      <header class="modal-header bg-primary text-white">
+        <div class="d-flex align-items-center">
+          <mat-icon class="me-3">inventory_2</mat-icon>
+          <h4 class="modal-title mb-0">Détails de la délivrance</h4>
+        </div>
+        <button type="button" class="btn-close btn-close-white" (click)="closeDetailsModal()" aria-label="Close"></button>
+      </header>
+
+      <!-- Body -->
+      <main class="modal-body" *ngIf="selectedDelivranceForDetails()">
+        <div class="container-fluid">
+          
+          <!-- Section Informations Générales -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header bg-light">
+                  <h5 class="mb-0">
+                    <mat-icon class="me-2">info</mat-icon>
+                    Informations Générales
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <table class="table table-sm">
+                        <tr>
+                          <th width="40%">ID Délivrance:</th>
+                          <td>{{ selectedDelivranceForDetails()?.id }}</td>
+                        </tr>
+                        <tr>
+                          <th>Date & Heure:</th>
+                          <td>{{ selectedDelivranceForDetails()?.dateHeureDelivrance | date:'dd/MM/yyyy HH:mm' }}</td>
+                        </tr>
+                        <tr>
+                          <th>Destination:</th>
+                          <td>{{ selectedDelivranceForDetails()?.destination }}</td>
+                        </tr>
+                      </table>
+                    </div>
+                    <div class="col-md-6">
+                      <table class="table table-sm">
+                        <tr>
+                          <th width="40%">Mode Transport:</th>
+                          <td>{{ selectedDelivranceForDetails()?.modeTransport }}</td>
+                        </tr>
+                        <tr>
+                          <th>Observations:</th>
+                          <td>{{ selectedDelivranceForDetails()?.observations || 'Aucune' }}</td>
+                        </tr>
+                        <tr>
+                          <th>Nombre de produits:</th>
+                          <td>
+                            <span class="badge bg-primary">
+                              {{ selectedDelivranceForDetails()?.produitsSanguins?.length || 0 }}
+                            </span>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Détails de la Demande -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header bg-light">
+                  <h5 class="mb-0">
+                    <mat-icon class="me-2">medical_services</mat-icon>
+                    Détails de la Demande
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="row" *ngIf="selectedDelivranceForDetails()?.demande">
+                    <div class="col-md-6">
+                      <table class="table table-sm">
+                        <tr>
+                          <th width="40%">ID Demande:</th>
+                          <td>{{ selectedDelivranceForDetails()?.demande?.id }}</td>
+                        </tr>
+                        <tr>
+                          <th>Patient:</th>
+                          <td>
+                            <strong>{{ selectedDelivranceForDetails()?.demande?.patientPrenom }} 
+                            {{ selectedDelivranceForDetails()?.demande?.patientNom }}</strong>
+                          </td>
+                        </tr>
+                        <tr>
+                          <th>Date naissance:</th>
+                          <td>{{ selectedDelivranceForDetails()?.demande?.patientDateNaissance | date:'dd/MM/yyyy' }}</td>
+                        </tr>
+                        <tr>
+                          <th>Groupe sanguin:</th>
+                          <td>
+                            <span class="badge bg-danger">
+                              {{ selectedDelivranceForDetails()?.demande?.groupeSanguinPatient }}
+                            </span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <th>N° dossier:</th>
+                          <td>{{ selectedDelivranceForDetails()?.demande?.patientNumDossier }}</td>
+                        </tr>
+                      </table>
+                    </div>
+                    <div class="col-md-6">
+                      <table class="table table-sm">
+                        <tr>
+                          <th width="40%">Service demandeur:</th>
+                          <td>{{ selectedDelivranceForDetails()?.demande?.serviceDemandeur }}</td>
+                        </tr>
+                        <tr>
+                          <th>Type produit:</th>
+                          <td>{{ selectedDelivranceForDetails()?.demande?.typeProduitDemande }}</td>
+                        </tr>
+                        <tr>
+                          <th>Quantité:</th>
+                          <td>{{ selectedDelivranceForDetails()?.demande?.quantiteDemande }}</td>
+                        </tr>
+                        <tr>
+                          <th>Statut:</th>
+                          <td>
+                            <span class="badge" 
+                                  [class.bg-success]="selectedDelivranceForDetails()?.demande?.statut === 'VALIDÉE'"
+                                  [class.bg-warning]="selectedDelivranceForDetails()?.demande?.statut === 'EN ATTENTE'"
+                                  [class.bg-danger]="selectedDelivranceForDetails()?.demande?.statut === 'REJETÉE'"
+                                  [class.bg-secondary]="!selectedDelivranceForDetails()?.demande?.statut">
+                              {{ selectedDelivranceForDetails()?.demande?.statut || 'N/A' }}
+                            </span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <th>Urgence:</th>
+                          <td>
+                            <mat-icon *ngIf="selectedDelivranceForDetails()?.demande?.urgence" 
+                                      class="text-danger">emergency</mat-icon>
+                            {{ selectedDelivranceForDetails()?.demande?.urgence ? 'OUI' : 'NON' }}
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+                  <div class="alert alert-info" *ngIf="!selectedDelivranceForDetails()?.demande">
+                    <mat-icon>info</mat-icon>
+                    Aucune information de demande disponible
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Produits Délivrés -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header bg-light">
+                  <h5 class="mb-0">
+                    <mat-icon class="me-2">bloodtype</mat-icon>
+                    Produits Délivrés
+                    <span class="badge bg-primary ms-2">
+                      {{ selectedDelivranceForDetails()?.produitsSanguins?.length || 0 }}
+                    </span>
+                  </h5>
+                </div>
+                <div class="card-body p-0" *ngIf="selectedDelivranceForDetails()?.produitsSanguins?.length">
+                  <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                      <thead class="table-light">
+                        <tr>
+                          <th>Code Produit</th>
+                          <th>Type</th>
+                          <th>Groupe Sanguin</th>
+                          <th>Date Péremption</th>
+                          <th>État</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let produit of selectedDelivranceForDetails()?.produitsSanguins">
+                          <td>
+                            <strong>{{ produit.codeProduit }}</strong>
+                          </td>
+                          <td>{{ produit.typeProduit }}</td>
+                          <td>
+                            <span class="badge bg-info">
+                              {{ produit.groupeSanguin }}{{ produit.rhesus || '+' }}
+                            </span>
+                          </td>
+                          <td>
+                            {{ produit.datePeremption | date:'dd/MM/yyyy' }}
+                            <span *ngIf="isProduitPerime(produit)" class="badge bg-danger ms-1">PÉRIMÉ</span>
+                          </td>
+                          <td>
+                            <span class="badge" [ngClass]="{
+                              'bg-success': produit.etat === 'UTILISÉ',
+                              'bg-secondary': produit.etat === 'DISPONIBLE',
+                              'bg-warning': produit.etat === 'RÉSERVÉ',
+                              'bg-info': produit.etat === 'DÉLIVRÉ'
+                            }">
+                              {{ produit.etat }}
+                            </span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="card-body" *ngIf="!selectedDelivranceForDetails()?.produitsSanguins?.length">
+                  <div class="alert alert-warning">
+                    <mat-icon>warning</mat-icon>
+                    Aucun produit associé à cette délivrance
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Personnel -->
+          <div class="row">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header bg-light">
+                  <h5 class="mb-0">
+                    <mat-icon class="me-2">badge</mat-icon>
+                    Personnel Responsable
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="row" *ngIf="selectedDelivranceForDetails()?.personnel">
+                    <div class="col-md-2 text-center">
+                      <div class="avatar-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" 
+                           style="width: 80px; height: 80px; border-radius: 50%; font-size: 32px;">
+                        {{ getInitials(selectedDelivranceForDetails()?.personnel) }}
+                      </div>
+                    </div>
+                    <div class="col-md-10">
+                      <table class="table table-sm">
+                        <tr>
+                          <th width="30%">Nom complet:</th>
+                          <td>
+                            <strong>{{ selectedDelivranceForDetails()?.personnel?.prenom }} 
+                            {{ selectedDelivranceForDetails()?.personnel?.nom }}</strong>
+                          </td>
+                        </tr>
+                        <tr>
+                          <th>Matricule:</th>
+                          <td>{{ selectedDelivranceForDetails()?.personnel?.matricule }}</td>
+                        </tr>
+                        <tr>
+                          <th>Fonction:</th>
+                          <td>{{ selectedDelivranceForDetails()?.personnel?.fonction }}</td>
+                        </tr>
+                        <tr>
+                          <th>Email:</th>
+                          <td>{{ selectedDelivranceForDetails()?.personnel?.email }}</td>
+                        </tr>
+                        <tr>
+                          <th>Téléphone:</th>
+                          <td>{{ selectedDelivranceForDetails()?.personnel?.telephone }}</td>
+                        </tr>
+                        <tr>
+                          <th>Statut:</th>
+                          <td>
+                            <span class="badge" [ngClass]="{
+                              'bg-success': selectedDelivranceForDetails()?.personnel?.statut === 'ACTIF',
+                              'bg-danger': selectedDelivranceForDetails()?.personnel?.statut === 'INACTIF'
+                            }">
+                              {{ selectedDelivranceForDetails()?.personnel?.statut }}
+                            </span>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+                  <div class="alert alert-info" *ngIf="!selectedDelivranceForDetails()?.personnel">
+                    <mat-icon>info</mat-icon>
+                    Aucune information sur le personnel responsable
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+      <!-- Footer -->
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDetailsModal()">
+          <mat-icon>close</mat-icon>
+          Fermer
+        </button>
+        <button type="button" class="btn btn-primary" (click)="imprimerDetails()">
+          <mat-icon>print</mat-icon>
+          Imprimer
+        </button>
+        <button type="button" class="btn btn-accent" (click)="creerTransfusionDepuisDetails()">
+          <mat-icon>bloodtype</mat-icon>
+          Créer transfusion
+        </button>
+      </footer>
+    </div>
+  </div>
+</ng-template>

@@ -1,0 +1,19 @@
+.user-type-dialog {
+  .mat-mdc-dialog-container {
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  }
+}
+
+// Styles pour les cartes de type utilisateur
+.user-type-card {
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+  }
+  
+  &.selected {
+    border-width: 2px !important;
+  }
+}

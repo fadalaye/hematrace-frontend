@@ -1,0 +1,80 @@
+// demandes.component.scss
+.hover-row:hover {
+  background-color: #f8f9fa;
+  cursor: pointer;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.375rem 0.75rem;
+}
+
+.table-responsive {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+// Styles pour les statuts
+.badge.bg-warning {
+  background-color: #ffc107 !important;
+  color: #212529 !important;
+}
+
+.badge.bg-success {
+  background-color: #198754 !important;
+}
+
+.badge.bg-danger {
+  background-color: #dc3545 !important;
+}
+
+.badge.bg-primary {
+  background-color: #0d6efd !important;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+  
+  .btn-group .mat-icon-button {
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+    
+    .mat-icon {
+      font-size: 18px;
+    }
+  }
+}
+
+// Dans demandes.component.scss - AJOUTER ces styles
+
+// Styles pour la modale d'information
+.modal-header.bg-info {
+  background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
+}
+
+.card-header.bg-light {
+  background-color: #f8f9fa !important;
+  border-bottom: 1px solid #dee2e6;
+}
+
+// Amélioration visuelle des badges
+.badge.fs-6 {
+  font-size: 0.9rem !important;
+  padding: 0.5rem 0.75rem;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .modal-lg {
+    margin: 1rem;
+    max-width: calc(100% - 2rem);
+  }
+  
+  .card-body .row > div {
+    margin-bottom: 1rem;
+  }
+}

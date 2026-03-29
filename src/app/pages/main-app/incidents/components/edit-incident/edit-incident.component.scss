@@ -1,0 +1,231 @@
+.alert-info {
+  background-color: #d1ecf1;
+  border-color: #bee5eb;
+  color: #0c5460;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+}
+
+.form-check-input:checked {
+  background-color: #198754;
+  border-color: #198754;
+}
+
+// Amélioration visuelle des labels
+.form-label {
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+// Style pour l'en-tête danger
+.modal-header.bg-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  
+  .modal-title {
+    color: white;
+    
+    mat-icon {
+      color: white;
+    }
+  }
+}
+
+// Bouton danger
+.btn-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  border-color: #dc3545;
+  
+  &:hover {
+    background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+    border-color: #c82333;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .modal-body .row.g-4 > [class*="col-"] {
+    margin-bottom: 1rem;
+  }
+  
+  .modal-header {
+    padding: 0.75rem 1rem;
+    
+    .modal-title {
+      font-size: 1.1rem;
+    }
+  }
+}
+
+// Style pour les zones de texte
+textarea.form-control {
+  min-height: 80px;
+  resize: vertical;
+}
+
+// Style pour les sections
+.border-bottom {
+  border-color: #dee2e6 !important;
+}
+
+// Style pour les titres de sections
+h6 {
+  color: #dc3545;
+  font-weight: 600;
+  
+  mat-icon {
+    vertical-align: middle;
+  }
+}
+
+// Style pour le texte d'aide
+.text-muted {
+  font-size: 0.85rem;
+}
+
+// Style pour les erreurs
+.text-danger.small {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+// edit-incident.component.scss
+.alert-info {
+  background-color: #d1ecf1;
+  border-color: #bee5eb;
+  color: #0c5460;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  border-color: #ffeaa7;
+  color: #856404;
+}
+
+// Style pour l'en-tête danger
+.modal-header.bg-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  
+  .modal-title {
+    color: white;
+    
+    mat-icon {
+      color: white;
+    }
+  }
+}
+
+// Bouton danger
+.btn-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  border-color: #dc3545;
+  
+  &:hover {
+    background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+    border-color: #c82333;
+  }
+  
+  &:disabled {
+    background: #dc3545;
+    opacity: 0.65;
+  }
+}
+
+// Style pour la carte des détails transfusion
+.card.border-info {
+  border-left: 4px solid #0dcaf0;
+  
+  .card-header.bg-info {
+    background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
+  }
+}
+
+// Badges
+.badge {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  
+  &.bg-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+  }
+  
+  &.bg-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #5c636a 100%);
+  }
+}
+
+// Style pour les listes de sélection
+select.form-control {
+  option {
+    padding: 0.5rem;
+  }
+  
+  &:disabled {
+    background-color: #e9ecef;
+    opacity: 1;
+  }
+}
+
+// Spinner
+.spinner-border.text-danger {
+  border-color: #dc3545 transparent #dc3545 transparent;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .modal-body .row.g-4 > [class*="col-"] {
+    margin-bottom: 1rem;
+  }
+  
+  .modal-header {
+    padding: 0.75rem 1rem;
+    
+    .modal-title {
+      font-size: 1.1rem;
+    }
+  }
+  
+  .card-body .row > [class*="col-"] {
+    margin-bottom: 0.5rem;
+  }
+}
+
+// Style pour les zones de texte
+textarea.form-control {
+  min-height: 80px;
+  resize: vertical;
+}
+
+// Style pour les sections
+.border-bottom {
+  border-color: #dee2e6 !important;
+}
+
+// Style pour les titres de sections
+h6 {
+  color: #dc3545;
+  font-weight: 600;
+  
+  mat-icon {
+    vertical-align: middle;
+  }
+  
+  &.text-success {
+    color: #198754;
+  }
+}
+
+// Style pour le texte d'aide
+.text-muted {
+  font-size: 0.85rem;
+}
+
+// Style pour les erreurs
+.text-danger.small {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}

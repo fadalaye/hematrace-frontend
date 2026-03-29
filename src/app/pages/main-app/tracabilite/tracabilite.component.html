@@ -1,0 +1,273 @@
+<div class="tracabilite-container">
+  <!-- En-tête -->
+  <div class="header">
+    <h1>
+      <mat-icon>track_changes</mat-icon>
+      Traçabilité du Système
+    </h1>
+    <p>Recherchez et suivez toutes les activités du système</p>
+  </div>
+
+  <!-- Formulaire de recherche -->
+  <mat-card class="search-card">
+    <mat-card-header>
+      <mat-card-title>Recherche Avancée</mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <form [formGroup]="searchForm" (ngSubmit)="onSearch()">
+        <div class="search-grid">
+          <!-- Champ de recherche générale -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Rechercher (référence, nom, description...)</mat-label>
+            <input matInput formControlName="query" placeholder="Ex: A123, John Doe, produit sanguin...">
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+
+          <!-- Filtres avancés -->
+          <div class="filters-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Type d'entité</mat-label>
+              <mat-select formControlName="type">
+                <mat-option *ngFor="let type of entityTypes" [value]="type.value">
+                  {{type.label}}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Statut</mat-label>
+              <mat-select formControlName="statut">
+                <mat-option *ngFor="let status of statuses" [value]="status.value">
+                  {{status.label}}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Référence</mat-label>
+              <input matInput formControlName="reference" placeholder="Ex: PS-2024-001">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Utilisateur</mat-label>
+              <input matInput formControlName="utilisateur" placeholder="Nom de l'utilisateur">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Date début</mat-label>
+              <input matInput [matDatepicker]="picker1" formControlName="dateDebut">
+              <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+              <mat-datepicker #picker1></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Date fin</mat-label>
+              <input matInput [matDatepicker]="picker2" formControlName="dateFin">
+              <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+              <mat-datepicker #picker2></mat-datepicker>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button mat-raised-button color="primary" type="submit" [disabled]="isLoading">
+            <mat-icon *ngIf="!isLoading">search</mat-icon>
+            <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
+            Rechercher
+          </button>
+          
+          <button mat-button type="button" (click)="onReset()">
+            <mat-icon>refresh</mat-icon>
+            Réinitialiser
+          </button>
+
+          <div class="export-buttons">
+            <button mat-button type="button" (click)="exporter('csv')">
+              <mat-icon>download</mat-icon>
+              CSV
+            </button>
+            <button mat-button type="button" (click)="exporter('excel')">
+              <mat-icon>download</mat-icon>
+              Excel
+            </button>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Résultats -->
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>
+        Résultats ({{totalResults}})
+      </mat-card-title>
+      <mat-card-subtitle *ngIf="totalResults > 0">
+        Dernière mise à jour: {{today | date:'dd/MM/yyyy HH:mm'}}
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div *ngIf="isLoading" class="loading">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Recherche en cours...</p>
+      </div>
+
+      <div *ngIf="!isLoading && searchResults.data.length === 0" class="no-results">
+        <mat-icon>search_off</mat-icon>
+        <h3>Aucun résultat trouvé</h3>
+        <p>Ajustez vos critères de recherche ou essayez une recherche plus large.</p>
+      </div>
+
+      <div *ngIf="!isLoading && searchResults.data.length > 0" class="results-container">
+        <div class="table-responsive">
+          <table mat-table [dataSource]="searchResults" matSort class="mat-elevation-z1">
+            <!-- Type Column -->
+            <ng-container matColumnDef="type">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header> Type </th>
+              <td mat-cell *matCellDef="let element">
+                <mat-chip [style.background-color]="element.color || '#e0e0e0'" selected>
+                  <mat-icon>{{element.icon || 'search'}}</mat-icon>
+                  {{getTypeDisplayName(element.type)}}
+                </mat-chip>
+              </td>
+            </ng-container>
+
+            <!-- Référence Column -->
+            <ng-container matColumnDef="reference">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header> Référence </th>
+              <td mat-cell *matCellDef="let element">
+                <strong>{{element.reference}}</strong>
+              </td>
+            </ng-container>
+
+            <!-- Description Column -->
+            <ng-container matColumnDef="description">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header> Description </th>
+              <td mat-cell *matCellDef="let element" class="description-cell">
+                <div class="description-content">
+                  <div class="description-text">{{element.description}}</div>
+                    <div class="description-details" *ngIf="element.entity">
+                      <small *ngIf="element.entity.patientNom">
+                        Patient: {{element.entity.patientPrenom || ''}} {{element.entity.patientNom}}
+                      </small>
+                      <small *ngIf="element.entity.typeProduit">
+                        Produit: {{element.entity.typeProduit}}
+                      </small>
+                    </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Date Column -->
+            <ng-container matColumnDef="date">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header> Date </th>
+              <td mat-cell *matCellDef="let element">
+                {{element.displayDate || (element.date | date:'dd/MM/yyyy HH:mm')}}
+              </td>
+            </ng-container>
+
+            <!-- Statut Column -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header> Statut </th>
+              <td mat-cell *matCellDef="let element">
+                <span class="status-badge" [style.background-color]="element.color || '#757575'">
+                  {{getStatusDisplayName(element.statut)}}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Utilisateur Column -->
+            <ng-container matColumnDef="user">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header> Utilisateur </th>
+              <td mat-cell *matCellDef="let element">
+                <div class="user-info">
+                  <mat-icon class="user-icon">person</mat-icon>
+                  {{element.utilisateur || 'Système'}}
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef> Actions </th>
+              <td mat-cell *matCellDef="let element">
+                <button mat-icon-button color="primary" 
+                        [matTooltip]="'Voir les détails ' + getTypeDisplayName(element.type)"
+                        (click)="voirDetails(element)">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                
+                <button mat-icon-button color="accent" 
+                        [matTooltip]="'Historique complet'"
+                        (click)="voirHistorique(element)">
+                  <mat-icon>history</mat-icon>
+                </button>
+
+                <button mat-icon-button color="warn" 
+                        [matTooltip]="'Chaîne complète'"
+                        (click)="voirChaine(element)"
+                        *ngIf="element.type !== 'log'">
+                  <mat-icon>alt_route</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+        </div>
+
+        <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" 
+                      showFirstLastButtons
+                      aria-label="Select page of results">
+        </mat-paginator>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Panneau de statistiques -->
+  <mat-card class="stats-card" *ngIf="statistics">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>analytics</mat-icon>
+        Statistiques de Traçabilité
+      </mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value">{{statistics.totalProduits}}</div>
+          <div class="stat-label">Produits sanguins</div>
+        </div>
+        
+        <div class="stat-item">
+          <div class="stat-value">{{statistics.totalDemandes}}</div>
+          <div class="stat-label">Demandes</div>
+        </div>
+        
+        <div class="stat-item">
+          <div class="stat-value">{{statistics.totalDelivrances}}</div>
+          <div class="stat-label">Délivrances</div>
+        </div>
+        
+        <div class="stat-item">
+          <div class="stat-value">{{statistics.totalTransfusions}}</div>
+          <div class="stat-label">Transfusions</div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-value">{{statistics.totalIncidents}}</div>
+          <div class="stat-label">Incidents</div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-value">{{statistics.totalLogs}}</div>
+          <div class="stat-label">Logs de traçabilité</div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

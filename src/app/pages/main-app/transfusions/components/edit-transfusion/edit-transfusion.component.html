@@ -1,0 +1,371 @@
+<div class="modal-header bg-primary text-white">
+    <h5 class="modal-title">
+        <mat-icon class="me-2">{{ transfusion ? 'edit' : 'add_circle' }}</mat-icon>
+        {{ transfusion ? 'Modifier la Transfusion' : 'Nouvelle Transfusion' }}
+    </h5>
+</div>
+
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-body">
+    <div class="row g-3">
+        
+        <!-- Informations Patient -->
+        <div class="col-12">
+            <h6 class="border-bottom pb-2 text-primary">
+                <mat-icon class="me-2">personal_injury</mat-icon>
+                Informations Patient
+            </h6>
+        </div>
+
+        <div class="col-md-6">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Nom Patient *</mat-label>
+                <input matInput formControlName="patientNom" placeholder="Nom">
+                @if (form.get('patientNom')?.invalid && form.get('patientNom')?.touched) {
+                    <mat-error>Le nom du patient est requis</mat-error>
+                }
+            </mat-form-field>
+        </div>
+
+        <div class="col-md-6">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Prénom Patient *</mat-label>
+                <input matInput formControlName="patientPrenom" placeholder="Prénom">
+                @if (form.get('patientPrenom')?.invalid && form.get('patientPrenom')?.touched) {
+                    <mat-error>Le prénom du patient est requis</mat-error>
+                }
+            </mat-form-field>
+        </div>
+
+        <div class="col-md-6">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Date de Naissance *</mat-label>
+                <input matInput [matDatepicker]="picker" formControlName="patientDateNaissance">
+                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+                @if (form.get('patientDateNaissance')?.invalid && form.get('patientDateNaissance')?.touched) {
+                    <mat-error>La date de naissance est requise</mat-error>
+                }
+            </mat-form-field>
+        </div>
+
+        <div class="col-md-6">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Numéro Dossier *</mat-label>
+                <input matInput formControlName="patientNumDossier" placeholder="N° Dossier">
+                @if (form.get('patientNumDossier')?.invalid && form.get('patientNumDossier')?.touched) {
+                    <mat-error>Le numéro de dossier est requis</mat-error>
+                }
+            </mat-form-field>
+        </div>
+
+        <div class="col-md-6">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Groupe Sanguin Patient *</mat-label>
+                <mat-select formControlName="groupeSanguinPatient">
+                    <mat-option value="">Sélectionner</mat-option>
+                    @for (groupe of groupesSanguins; track groupe) {
+                        <mat-option [value]="groupe">{{ groupe }}</mat-option>
+                    }
+                </mat-select>
+                @if (form.get('groupeSanguinPatient')?.invalid && form.get('groupeSanguinPatient')?.touched) {
+                    <mat-error>Le groupe sanguin est requis</mat-error>
+                }
+            </mat-form-field>
+        </div>
+
+        <!-- Informations Transfusion -->
+        <div class="col-12 mt-4">
+            <h6 class="border-bottom pb-2 text-primary">
+                <mat-icon class="me-2">bloodtype</mat-icon>
+                Informations Transfusion
+            </h6>
+        </div>
+
+        <!-- Seulement la section médecins modifiée, le reste reste identique -->
+<div class="col-md-6">
+    <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Médecin Responsable *</mat-label>
+        <mat-select formControlName="medecinId">
+            <mat-option value="">Sélectionner un médecin</mat-option>
+            @if (loadingMedecins) {
+                <mat-option disabled>
+                    <div class="d-flex align-items-center">
+                        <mat-spinner diameter="20" class="me-2"></mat-spinner>
+                        Chargement des médecins...
+                    </div>
+                </mat-option>
+            } @else {
+                @for (medecin of medecins; track medecin.id) {
+                    <mat-option [value]="medecin.id">
+                        {{ getMedecinDisplayName(medecin) }}
+                    </mat-option>
+                }
+                @if (medecins.length === 0 && !loadingMedecins) {
+                    <mat-option disabled>
+                        Aucun médecin disponible
+                    </mat-option>
+                }
+            }
+        </mat-select>
+        @if (form.get('medecinId')?.invalid && form.get('medecinId')?.touched) {
+            <mat-error>Le médecin responsable est requis</mat-error>
+        }
+    </mat-form-field>
+</div>
+
+        <div class="col-md-6">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Produit Sanguin *</mat-label>
+                <mat-select formControlName="produitSanguinId">
+                    <mat-option value="">Sélectionner un produit</mat-option>
+                    @for (produit of produitsSanguins; track produit.id) {
+                        <mat-option [value]="produit.id">
+                            {{ getProduitSanguinDisplayName(produit) }}
+                        </mat-option>
+                    }
+                </mat-select>
+                @if (form.get('produitSanguinId')?.invalid && form.get('produitSanguinId')?.touched) {
+                    <mat-error>Le produit sanguin est requis</mat-error>
+                }
+            </mat-form-field>
+        </div>
+
+        <div class="col-md-4">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Date Transfusion *</mat-label>
+                <input matInput [matDatepicker]="datePicker" formControlName="dateTransfusion">
+                <mat-datepicker-toggle matSuffix [for]="datePicker"></mat-datepicker-toggle>
+                <mat-datepicker #datePicker></mat-datepicker>
+                @if (form.get('dateTransfusion')?.invalid && form.get('dateTransfusion')?.touched) {
+                    <mat-error>La date de transfusion est requise</mat-error>
+                }
+            </mat-form-field>
+        </div>
+
+        <div class="col-md-4">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Heure Début</mat-label>
+                <input matInput formControlName="heureDebut" placeholder="HH:mm" type="time">
+                @if (form.get('heureDebut')?.invalid && form.get('heureDebut')?.touched) {
+                    <mat-error>Format HH:mm requis</mat-error>
+                }
+            </mat-form-field>
+        </div>
+
+        <div class="col-md-4">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Heure Fin</mat-label>
+                <input matInput formControlName="heureFin" placeholder="HH:mm" type="time">
+                @if (form.get('heureFin')?.invalid && form.get('heureFin')?.touched) {
+                    <mat-error>Format HH:mm requis</mat-error>
+                }
+            </mat-form-field>
+        </div>
+
+        <!-- Durée et vitesse calculées -->
+        @if (form.get('heureDebut')?.value && form.get('heureFin')?.value) {
+            <div class="col-md-6">
+                <div class="alert alert-info py-2">
+                    <div class="d-flex align-items-center">
+                        <mat-icon class="me-2">schedule</mat-icon>
+                        <div>
+                            <strong>Durée :</strong> {{ calculateDuree() }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (form.get('volume')?.value && form.get('heureDebut')?.value && form.get('heureFin')?.value) {
+            <div class="col-md-6">
+                <div class="alert alert-info py-2">
+                    <div class="d-flex align-items-center">
+                        <mat-icon class="me-2">speed</mat-icon>
+                        <div>
+                            <strong>Vitesse :</strong> {{ calculateVitesse() }} ml/h
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="col-md-6">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Volume (ml)</mat-label>
+                <input matInput type="number" formControlName="volume" min="0" max="5000">
+                <span matSuffix>ml</span>
+                @if (form.get('volume')?.invalid && form.get('volume')?.touched) {
+                    <mat-error>Volume entre 0 et 5000 ml</mat-error>
+                }
+            </mat-form-field>
+        </div>
+
+        <div class="col-md-6">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Température Produit (°C)</mat-label>
+                <input matInput type="number" formControlName="temperatureProduit" min="1" max="40" step="0.1">
+                <span matSuffix>°C</span>
+                @if (form.get('temperatureProduit')?.invalid && form.get('temperatureProduit')?.touched) {
+                    <mat-error>Température entre 1°C et 40°C</mat-error>
+                }
+            </mat-form-field>
+        </div>
+
+        <!-- État et Tolérance -->
+        <div class="col-12 mt-4">
+            <h6 class="border-bottom pb-2 text-primary">
+                <mat-icon class="me-2">monitor_heart</mat-icon>
+                État et Tolérance
+            </h6>
+        </div>
+
+        <div class="col-md-6">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>État Patient Après *</mat-label>
+                <mat-select formControlName="etatPatientApres">
+                    <mat-option value="">Sélectionner</mat-option>
+                    <mat-option value="Stable">Stable</mat-option>
+                    <mat-option value="Amélioré">Amélioré</mat-option>
+                    <mat-option value="Stationnaire">Stationnaire</mat-option>
+                    <mat-option value="Dégradé">Dégradé</mat-option>
+                    <mat-option value="Critique">Critique</mat-option>
+                </mat-select>
+                @if (form.get('etatPatientApres')?.invalid && form.get('etatPatientApres')?.touched) {
+                    <mat-error>L'état du patient est requis</mat-error>
+                }
+            </mat-form-field>
+        </div>
+
+        <div class="col-md-6">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Tolérance *</mat-label>
+                <mat-select formControlName="tolerance">
+                    <mat-option value="">Sélectionner</mat-option>
+                    <mat-option value="Bonne">Bonne</mat-option>
+                    <mat-option value="Mauvaise">Mauvaise</mat-option>
+                </mat-select>
+                @if (form.get('tolerance')?.invalid && form.get('tolerance')?.touched) {
+                    <mat-error>La tolérance est requise</mat-error>
+                }
+            </mat-form-field>
+        </div>
+
+        <!-- Effets Indésirables -->
+        <div class="col-md-12">
+            <div class="d-flex align-items-center mb-3">
+                <mat-checkbox formControlName="effetsIndesirables" class="me-2">
+                    Effets indésirables
+                </mat-checkbox>
+                <span class="text-muted ms-2">
+                    <mat-icon class="me-1" style="font-size: 18px;">warning</mat-icon>
+                    Cocher si des effets indésirables ont été observés
+                </span>
+            </div>
+        </div>
+
+        @if (form.get('effetsIndesirables')?.value) {
+            <div class="col-md-6">
+                <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Type d'Effet *</mat-label>
+                    <input matInput formControlName="typeEffet" placeholder="Ex: Frissons, Fièvre, Urticaire...">
+                    @if (form.get('typeEffet')?.invalid && form.get('typeEffet')?.touched) {
+                        <mat-error>Le type d'effet est requis</mat-error>
+                    }
+                </mat-form-field>
+            </div>
+
+            <div class="col-md-6">
+                <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Gravité *</mat-label>
+                    <mat-select formControlName="graviteEffet">
+                        <mat-option value="">Sélectionner</mat-option>
+                        <mat-option value="Légère">Légère</mat-option>
+                        <mat-option value="Modérée">Modérée</mat-option>
+                        <mat-option value="Sévère">Sévère</mat-option>
+                        <mat-option value="Critique">Critique</mat-option>
+                    </mat-select>
+                    @if (form.get('graviteEffet')?.invalid && form.get('graviteEffet')?.touched) {
+                        <mat-error>La gravité est requise</mat-error>
+                    }
+                </mat-form-field>
+            </div>
+        }
+
+        <!-- Déclarant -->
+        <div class="col-12 mt-4">
+            <h6 class="border-bottom pb-2 text-primary">
+                <mat-icon class="me-2">assignment_ind</mat-icon>
+                Informations Déclarant
+            </h6>
+        </div>
+
+        <div class="col-md-6">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Prénom Déclarant *</mat-label>
+                <input matInput formControlName="prenomDeclarant" placeholder="Prénom">
+                @if (form.get('prenomDeclarant')?.invalid && form.get('prenomDeclarant')?.touched) {
+                    <mat-error>Le prénom du déclarant est requis</mat-error>
+                }
+            </mat-form-field>
+        </div>
+
+        <div class="col-md-6">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Nom Déclarant *</mat-label>
+                <input matInput formControlName="nomDeclarant" placeholder="Nom">
+                @if (form.get('nomDeclarant')?.invalid && form.get('nomDeclarant')?.touched) {
+                    <mat-error>Le nom du déclarant est requis</mat-error>
+                }
+            </mat-form-field>
+        </div>
+
+        <div class="col-md-12">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Fonction Déclarant *</mat-label>
+                <input matInput formControlName="fonctionDeclarant" placeholder="Ex: Infirmière, Médecin, Technicien...">
+                @if (form.get('fonctionDeclarant')?.invalid && form.get('fonctionDeclarant')?.touched) {
+                    <mat-error>La fonction du déclarant est requise</mat-error>
+                }
+            </mat-form-field>
+        </div>
+
+        <!-- Notes et Observations -->
+        <div class="col-12 mt-4">
+            <h6 class="border-bottom pb-2 text-primary">
+                <mat-icon class="me-2">notes</mat-icon>
+                Notes et Observations
+            </h6>
+        </div>
+
+        <div class="col-md-12">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Notes</mat-label>
+                <textarea matInput formControlName="notes" rows="3" placeholder="Notes supplémentaires..."></textarea>
+            </mat-form-field>
+        </div>
+
+        <div class="col-md-12">
+            <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Observations</mat-label>
+                <textarea matInput formControlName="observations" rows="3" placeholder="Observations cliniques..."></textarea>
+            </mat-form-field>
+        </div>
+
+        <!-- Footer avec boutons -->
+        <div class="col-12 mt-4">
+            <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                <button type="button" mat-stroked-button color="secondary" (click)="cancel()" [disabled]="loading">
+                    <mat-icon class="me-1">close</mat-icon>
+                    Annuler
+                </button>
+                <button type="submit" mat-raised-button color="primary" [disabled]="form.invalid || loading">
+                    <mat-icon class="me-1">{{ isEditMode ? 'save' : 'add' }}</mat-icon>
+                    {{ isEditMode ? 'Modifier' : 'Enregistrer' }} Transfusion
+                    @if (loading) {
+                        <mat-spinner diameter="20" class="ms-2"></mat-spinner>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+</form>

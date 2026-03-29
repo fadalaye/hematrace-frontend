@@ -1,0 +1,681 @@
+<div class="container-fluid mt-3">
+  <!-- En-tête avec statistiques -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card bg-light">
+        <div class="card-body py-3">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h4 class="mb-0">
+                <mat-icon class="me-2 text-danger">warning</mat-icon>
+                Gestion des Incidents Transfusionnels
+              </h4>
+              <small class="text-muted">
+                {{ getFilteredCount() }} sur {{ getTotalCount() }} incident(s)
+                @if (statistiques()) {
+                  - Validés: {{ statistiques()?.valides || 0 }} | Non validés: {{ statistiques()?.nonValides || 0 }}
+                }
+              </small>
+            </div>
+            <div class="col-md-6 text-end">
+              <!-- Bouton Déclarer un Incident - MÉDECIN et Super Users -->
+              @if (authService.canCreateIncident()) {
+                <button mat-raised-button color="danger" 
+                        (click)="openIncidentFormModal(incidentFormTemplate)" 
+                        class="me-2"
+                        [disabled]="loadingIndicator()">
+                  <mat-icon>add_alert</mat-icon> 
+                  Déclarer un Incident
+                </button>
+              }
+              
+              <button mat-stroked-button color="accent" 
+                      (click)="exportToExcel()"
+                      [disabled]="loadingIndicator() || getFilteredCount() === 0"
+                      class="me-2">
+                <mat-icon>download</mat-icon> 
+                Exporter Excel
+              </button>
+              
+              @if ((statistiques()?.total ?? 0) > 0) {
+                <button mat-stroked-button color="primary" 
+                        matTooltip="Rapport d'hémovigilance"
+                        [disabled]="loadingIndicator()">
+                  <mat-icon>assessment</mat-icon> 
+                  Rapport
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="row mb-3">
+    <div class="col-md-3">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Statut de validation</mat-label>
+        <mat-select (selectionChange)="onStatutFilterChange($event)" 
+                   [value]="selectedStatut()">
+          @for (option of statutOptions; track option.value) {
+            <mat-option [value]="option.value">
+              <mat-icon class="me-2">{{ option.icon }}</mat-icon>
+              {{ option.label }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+    
+    <div class="col-md-3">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Type de produit</mat-label>
+        <mat-select (selectionChange)="onTypeProduitFilterChange($event)" 
+                   [value]="selectedTypeProduit()">
+          @for (option of typeProduitOptions; track option.value) {
+            <mat-option [value]="option.value">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+    
+    <div class="col-md-2">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Date début</mat-label>
+        <input matInput [matDatepicker]="startPicker" (dateChange)="onStartDateChange($event.value)">
+        <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+        <mat-datepicker #startPicker></mat-datepicker>
+      </mat-form-field>
+    </div>
+    
+    <div class="col-md-2">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Date fin</mat-label>
+        <input matInput [matDatepicker]="endPicker" (dateChange)="onEndDateChange($event.value)">
+        <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+        <mat-datepicker #endPicker></mat-datepicker>
+      </mat-form-field>
+    </div>
+    
+    <div class="col-md-2">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Rechercher...</mat-label>
+        <input matInput 
+               (input)="onFilterChange($event)" 
+               placeholder="Patient, n° dossier, lieu..." 
+               [disabled]="loadingIndicator()">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <!-- Boutons de réinitialisation -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="text-muted small">
+          <mat-icon class="me-1" style="font-size: 16px;">filter_list</mat-icon>
+          {{ getFilteredCount() }} résultat(s)
+        </div>
+        <div>
+          <button mat-button color="warn" (click)="resetFilters()" 
+                  [disabled]="!selectedStatut() && !selectedTypeProduit() && !searchTerm() && !startDate() && !endDate()">
+            <mat-icon>clear_all</mat-icon>
+            Réinitialiser les filtres
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Indicateur de chargement -->
+  @if (loadingIndicator()) {
+    <div class="text-center py-5">
+      <div class="mb-3">
+        <mat-spinner diameter="50" class="mx-auto"></mat-spinner>
+      </div>
+      <p class="text-muted">Chargement des incidents...</p>
+    </div>
+  }
+
+  <!-- Tableau des incidents -->
+  @if (!loadingIndicator()) {
+    <div class="card">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table mat-table [dataSource]="dataSource" matSort class="w-100">
+            
+            <!-- Colonne Date Incident -->
+            <ng-container matColumnDef="dateIncident">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="ps-3">
+                Date Incident
+              </th>
+              <td mat-cell *matCellDef="let incident" class="ps-3">
+                <div class="fw-bold">{{ formatDate(incident.dateIncident) }}</div>
+                <small class="text-muted">{{ incident.heureIncident }}</small>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Nom Patient -->
+            <ng-container matColumnDef="patientNom">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                Nom Patient
+              </th>
+              <td mat-cell *matCellDef="let incident">
+                {{ incident.patientNom }}
+              </td>
+            </ng-container>
+
+            <!-- Colonne Prénom Patient -->
+            <ng-container matColumnDef="patientPrenom">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                Prénom Patient
+              </th>
+              <td mat-cell *matCellDef="let incident">
+                {{ incident.patientPrenom }}
+              </td>
+            </ng-container>
+
+            <!-- Colonne N° Dossier -->
+            <ng-container matColumnDef="patientNumDossier">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                N° Dossier
+              </th>
+              <td mat-cell *matCellDef="let incident">
+                <span class="badge bg-secondary">{{ incident.patientNumDossier }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Type Produit -->
+            <ng-container matColumnDef="typeProduitTransfuse">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                Type Produit
+              </th>
+              <td mat-cell *matCellDef="let incident">
+                <span class="badge bg-primary">{{ incident.typeProduitTransfuse }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Lieu -->
+            <ng-container matColumnDef="lieuIncident">
+              <th mat-header-cell *matHeaderCellDef>
+                Lieu
+              </th>
+              <td mat-cell *matCellDef="let incident">
+                <div class="d-flex align-items-center">
+                  <mat-icon class="me-2 text-muted" style="font-size: 18px;">place</mat-icon>
+                  {{ incident.lieuIncident }}
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Statut -->
+            <ng-container matColumnDef="statut">
+              <th mat-header-cell *matHeaderCellDef>
+                Statut
+              </th>
+              <td mat-cell *matCellDef="let incident">
+                <span [class]="getStatutBadgeClass(incident)" class="badge">
+                  <mat-icon class="me-1" style="font-size: 14px;">
+                    {{ getStatutIcon(incident) }}
+                  </mat-icon>
+                  {{ getStatutLabel(incident) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Date Déclaration -->
+            <ng-container matColumnDef="dateHeureDeclaration">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                Date Déclaration
+              </th>
+              <td mat-cell *matCellDef="let incident">
+                {{ formatDateTime(incident.dateHeureDeclaration) }}
+              </td>
+            </ng-container>
+
+            <!-- Colonne Info -->
+            <ng-container matColumnDef="info">
+              <th mat-header-cell *matHeaderCellDef class="text-center">
+                Détails
+              </th>
+              <td mat-cell *matCellDef="let incident" class="text-center">
+                <button mat-icon-button 
+                        color="info" 
+                        matTooltip="Voir les détails complets"
+                        (click)="openInfoModal(infoModalTemplate, incident)"
+                        class="me-1">
+                  <mat-icon>info</mat-icon>
+                </button>
+                <button mat-icon-button 
+                        color="primary" 
+                        matTooltip="Télécharger le rapport PDF"
+                        (click)="exportIncidentPDF(incident)"
+                        [disabled]="savingIndicator()">
+                  <mat-icon>picture_as_pdf</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <!-- Colonne Actions -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef class="text-end pe-3">
+                Actions
+              </th>
+              <td mat-cell *matCellDef="let incident" class="text-end pe-3">
+                <div class="btn-group" role="group">
+                  <!-- Bouton Modifier - MÉDECIN (ses incidents) et Super Users -->
+                  @if (authService.canUpdateIncident()) {
+                    <button mat-icon-button 
+                            color="primary" 
+                            matTooltip="Modifier"
+                            (click)="openIncidentFormModal(incidentFormTemplate, incident)"
+                            [disabled]="!canEditIncident(incident) || savingIndicator()"
+                            class="me-1">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                  }
+                  
+                  <!-- Bouton Valider - PERSONNEL QUALITÉ et Super Users -->
+                  @if (authService.canValidateIncident()) {
+                    <button mat-icon-button 
+                            color="success" 
+                            matTooltip="Valider l'incident"
+                            (click)="validerIncident(incident)"
+                            [disabled]="incident.dateValidation !== null || savingIndicator()"
+                            class="me-1">
+                      <mat-icon>check</mat-icon>
+                    </button>
+                  }
+                  
+                  <!-- Bouton Supprimer - Seulement Super Users -->
+                  @if (authService.canDeleteIncident()) {
+                    <button mat-icon-button 
+                            color="warn" 
+                            matTooltip="Supprimer"
+                            (click)="deleteIncident(incident)"
+                            [disabled]="savingIndicator()">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  }
+                  
+                  <!-- Message si pas de droits pour les actions -->
+                  @if (!authService.canUpdateIncident() && 
+                       !authService.canValidateIncident() && 
+                       !authService.canDeleteIncident()) {
+                    <span class="text-muted small">
+                      <mat-icon class="me-1" style="font-size: 16px;">visibility</mat-icon>
+                      Consultation seulement
+                    </span>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- En-tête et lignes -->
+            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-light"></tr>
+            <tr mat-row 
+                *matRowDef="let row; columns: displayedColumns;" 
+                class="hover-row"></tr>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <mat-paginator [pageSize]="10" 
+                      [pageSizeOptions]="[5, 10, 25, 50]" 
+                      showFirstLastButtons
+                      class="border-top">
+        </mat-paginator>
+
+        <!-- Message si aucun résultat -->
+        @if (getFilteredCount() === 0 && !loadingIndicator()) {
+          <div class="text-center py-5 text-muted">
+            <mat-icon class="display-1 text-muted mb-3">check_circle</mat-icon>
+            <h5>Aucun incident trouvé</h5>
+            @if (selectedStatut() !== 'TOUS' || searchTerm() || startDate() || endDate()) {
+              <p>
+                Aucun résultat pour les filtres actuels.
+                <a href="javascript:void(0)" 
+                  (click)="resetFilters()"
+                  class="text-primary text-decoration-none">
+                  Réinitialiser les filtres
+                </a>
+              </p>
+            }
+            @if (selectedStatut() === 'TOUS' && !searchTerm() && !startDate() && !endDate()) {
+              <p>
+                Aucun incident enregistré. 
+                @if (authService.canCreateIncident()) {
+                  <a href="javascript:void(0)" 
+                    (click)="openIncidentFormModal(incidentFormTemplate)"
+                    class="text-primary text-decoration-none">
+                    Déclarer le premier incident
+                  </a>
+                } @else {
+                  <span class="text-warning">
+                    Contactez un médecin pour déclarer un incident
+                  </span>
+                }
+              </p>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Indicateur de sauvegarde -->
+  @if (savingIndicator()) {
+    <div class="position-fixed top-0 start-50 translate-middle-x mt-3">
+      <div class="alert alert-info d-flex align-items-center shadow">
+        <mat-spinner diameter="20" class="me-2"></mat-spinner>
+        <span>Traitement en cours...</span>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Template du formulaire modal -->
+<ng-template #incidentFormTemplate>
+  <div class="modal-header bg-danger text-white">
+    <h5 class="modal-title">
+      <mat-icon class="me-2">warning</mat-icon>
+      {{ selectedIncident() ? 'Modifier' : 'Déclarer' }} un Incident Transfusionnel
+    </h5>
+    <button type="button" class="btn-close btn-close-white" (click)="closeIncidentModal()"></button>
+  </div>
+  <div class="modal-body">
+    <app-edit-incident
+      [updateItem]="selectedIncident()"
+      (addedData)="addIncident($event)"
+      (saved)="updateIncident($event)"
+      (cancelled)="closeIncidentModal()">
+    </app-edit-incident>
+  </div>
+</ng-template>
+
+<!-- Template de la modale d'information -->
+<ng-template #infoModalTemplate>
+  <div class="modal-header bg-danger text-white">
+    <h5 class="modal-title">
+      <mat-icon class="me-2">warning</mat-icon>
+      Détails Complets de l'Incident Transfusionnel
+    </h5>
+    <button type="button" class="btn-close btn-close-white" (click)="closeIncidentModal()"></button>
+  </div>
+  <div class="modal-body">
+    @if (selectedIncident()) {
+      @let incident = selectedIncident()!;
+      
+      <div class="row">
+        <!-- Informations Patient -->
+        <div class="col-md-6">
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h6 class="mb-0">
+                <mat-icon class="me-2 text-primary">person</mat-icon>
+                Informations Patient
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-6">
+                  <strong>Nom:</strong><br>
+                  {{ incident.patientNom }}
+                </div>
+                <div class="col-6">
+                  <strong>Prénom:</strong><br>
+                  {{ incident.patientPrenom }}
+                </div>
+              </div>
+              <div class="row mt-2">
+                <div class="col-6">
+                  <strong>Date de naissance:</strong><br>
+                  {{ formatDate(incident.patientDateNaissance) }}
+                </div>
+                <div class="col-6">
+                  <strong>N° Dossier:</strong><br>
+                  <span class="badge bg-secondary">{{ incident.patientNumDossier }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Informations Incident -->
+        <div class="col-md-6">
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h6 class="mb-0">
+                <mat-icon class="me-2 text-danger">warning</mat-icon>
+                Informations Incident
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-6">
+                  <strong>Date et heure:</strong><br>
+                  {{ formatDate(incident.dateIncident) }} à {{ incident.heureIncident }}
+                </div>
+                <div class="col-6">
+                  <strong>Lieu:</strong><br>
+                  {{ incident.lieuIncident }}
+                </div>
+              </div>
+              <div class="row mt-2">
+                <div class="col-6">
+                  <strong>Statut:</strong><br>
+                  <span [class]="getStatutBadgeClass(incident)" class="badge">
+                    {{ getStatutLabel(incident) }}
+                  </span>
+                </div>
+                <div class="col-6">
+                  <strong>Date déclaration:</strong><br>
+                  {{ formatDateTime(incident.dateHeureDeclaration) }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Informations Produit -->
+      <div class="card mb-4">
+        <div class="card-header bg-light">
+          <h6 class="mb-0">
+            <mat-icon class="me-2 text-primary">inventory</mat-icon>
+            Produit Transfusé
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4">
+              <strong>Type de Produit:</strong><br>
+              <span class="badge bg-primary fs-6">{{ incident.typeProduitTransfuse }}</span>
+            </div>
+            <div class="col-md-4">
+              <strong>Numéro de lot:</strong><br>
+              <span class="badge bg-secondary">{{ incident.numeroLotProduit }}</span>
+            </div>
+            <div class="col-md-4">
+              <strong>Date de péremption:</strong><br>
+              {{ formatDate(incident.datePeremptionProduit) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description de l'incident -->
+      @if (incident.descriptionIncident) {
+        <div class="card mb-4">
+          <div class="card-header bg-light">
+            <h6 class="mb-0">
+              <mat-icon class="me-2 text-warning">description</mat-icon>
+              Description de l'Incident
+            </h6>
+          </div>
+          <div class="card-body">
+            <p class="mb-0">{{ incident.descriptionIncident }}</p>
+          </div>
+        </div>
+      }
+
+      <!-- Signes et Symptômes -->
+      @if (incident.signes || incident.symptomes) {
+        <div class="card mb-4">
+          <div class="card-header bg-light">
+            <h6 class="mb-0">
+              <mat-icon class="me-2 text-warning">clinical_notes</mat-icon>
+              Signes et Symptômes
+            </h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              @if (incident.signes) {
+                <div class="col-md-6">
+                  <strong>Signes observés:</strong><br>
+                  <p class="mb-0">{{ incident.signes }}</p>
+                </div>
+              }
+              @if (incident.symptomes) {
+                <div class="col-md-6">
+                  <strong>Symptômes rapportés:</strong><br>
+                  <p class="mb-0">{{ incident.symptomes }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Actions Immédiates -->
+      @if (incident.actionsImmediates) {
+        <div class="card mb-4">
+          <div class="card-header bg-light">
+            <h6 class="mb-0">
+              <mat-icon class="me-2 text-success">emergency</mat-icon>
+              Actions Immédiates
+            </h6>
+          </div>
+          <div class="card-body">
+            <p class="mb-0">{{ incident.actionsImmediates }}</p>
+          </div>
+        </div>
+      }
+
+      <!-- Informations Déclarant -->
+      <div class="card mb-4">
+        <div class="card-header bg-light">
+          <h6 class="mb-0">
+            <mat-icon class="me-2 text-primary">badge</mat-icon>
+            Informations Déclarant
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Nom du déclarant:</strong><br>
+              {{ incident.nomDeclarant }}
+            </div>
+            <div class="col-md-6">
+              <strong>Fonction:</strong><br>
+              {{ incident.fonctionDeclarant }}
+            </div>
+          </div>
+          @if (incident.personnesInformees) {
+            <div class="row mt-2">
+              <div class="col-12">
+                <strong>Personnes informées:</strong><br>
+                <p class="mb-0">{{ incident.personnesInformees }}</p>
+              </div>
+            </div>
+          }
+          @if (incident.registreHemovigilance) {
+            <div class="row mt-2">
+              <div class="col-12">
+                <strong>Référence registre d'hémovigilance:</strong><br>
+                <span class="badge bg-info">{{ incident.registreHemovigilance }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Analyse et Actions Correctives (si validé) -->
+      @if (incident.dateValidation) {
+        <div class="card mb-4 border-success">
+          <div class="card-header bg-success text-white">
+            <h6 class="mb-0">
+              <mat-icon class="me-2">verified</mat-icon>
+              Analyse et Validation
+            </h6>
+          </div>
+          <div class="card-body">
+            @if (incident.analysePreliminaire) {
+              <div class="mb-3">
+                <strong>Analyse préliminaire:</strong><br>
+                <p class="mb-0">{{ incident.analysePreliminaire }}</p>
+              </div>
+            }
+            @if (incident.actionsCorrectives) {
+              <div class="mb-3">
+                <strong>Actions correctives proposées:</strong><br>
+                <p class="mb-0">{{ incident.actionsCorrectives }}</p>
+              </div>
+            }
+            <div class="row mt-3">
+              <div class="col-6">
+                <strong>Date de validation:</strong><br>
+                {{ formatDate(incident.dateValidation!) }}
+              </div>
+              @if (incident.signatureResponsableQualite) {
+                <div class="col-6">
+                  <strong>Signature responsable qualité:</strong><br>
+                  <span class="text-muted">{{ incident.signatureResponsableQualite }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+    } @else {
+      <div class="text-center py-4 text-muted">
+        <mat-icon class="display-1 mb-3">error</mat-icon>
+        <h5>Aucun incident sélectionné</h5>
+      </div>
+    }
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="closeIncidentModal()">
+      <mat-icon class="me-1">close</mat-icon>
+      Fermer
+    </button>
+    @if (selectedIncident()) {
+      <button type="button" class="btn btn-primary" 
+              (click)="exportIncidentPDF(selectedIncident()!)"
+              [disabled]="savingIndicator()">
+        <mat-icon class="me-1">picture_as_pdf</mat-icon>
+        Télécharger PDF
+      </button>
+      @if (authService.canUpdateIncident()) {
+        <button type="button" class="btn btn-warning" 
+                (click)="openIncidentFormModal(incidentFormTemplate, selectedIncident()!)">
+          <mat-icon class="me-1">edit</mat-icon>
+          Modifier
+        </button>
+      }
+      @if (authService.canValidateIncident() && !selectedIncident()!.dateValidation) {
+        <button type="button" class="btn btn-success" 
+                (click)="validerIncident(selectedIncident()!)">
+          <mat-icon class="me-1">check</mat-icon>
+          Valider
+        </button>
+      }
+    }
+  </div>
+</ng-template>
+
+<router-outlet></router-outlet>

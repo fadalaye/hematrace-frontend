@@ -1,0 +1,25 @@
+// edit-demande.component.scss
+.alert-info {
+  background-color: #d1ecf1;
+  border-color: #bee5eb;
+  color: #0c5460;
+}
+
+.form-check-input:checked {
+  background-color: #198754;
+  border-color: #198754;
+}
+
+// Amélioration visuelle des labels
+.form-label {
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .modal-body .row.g-4 > [class*="col-"] {
+    margin-bottom: 1rem;
+  }
+}

@@ -1,0 +1,79 @@
+<div class="login-container">
+  <div class="login-background"></div>
+  
+  <mat-card class="login-card">
+    <mat-card-header class="text-center mb-4">
+      <div class="login-logo">
+        <img src="assets/img/logo-hematrace.png"
+             alt="Hématrace Logo"
+             class="logo-image">
+      </div>
+      <mat-card-title>Connexion</mat-card-title>
+      <mat-card-subtitle>Système de gestion des produits sanguins</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+        
+        <!-- Champ Identifiant -->
+        <mat-form-field appearance="outline" class="w-100"
+                       [class.field-error]="errorType() === 'IDENTIFIANT'">
+          <mat-label>Matricule ou Email</mat-label>
+          <input matInput 
+                 #identifiantInput
+                 formControlName="identifiant" 
+                 placeholder="Votre matricule ou adresse email"
+                 (input)="onFieldInput('identifiant')">
+          <mat-icon matPrefix>person</mat-icon>
+          <mat-error *ngIf="identifiant?.hasError('required')">
+            L'identifiant est obligatoire
+          </mat-error>
+          <mat-error *ngIf="identifiant?.hasError('minlength')">
+            L'identifiant doit contenir au moins 3 caractères
+          </mat-error>
+          <mat-error *ngIf="identifiant?.hasError('incorrect')">
+            Identifiant incorrect
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Champ Mot de passe -->
+        <mat-form-field appearance="outline" class="w-100"
+                       [class.field-error]="errorType() === 'MOT_DE_PASSE'">
+          <mat-label>Mot de passe</mat-label>
+          <input matInput 
+                 #motDePasseInput
+                 type="password" 
+                 formControlName="motDePasse" 
+                 placeholder="Votre mot de passe"
+                 (input)="onFieldInput('motDePasse')">
+          <mat-icon matPrefix>lock</mat-icon>
+          <mat-error *ngIf="motDePasse?.hasError('required')">
+            Le mot de passe est obligatoire
+          </mat-error>
+          <mat-error *ngIf="motDePasse?.hasError('incorrect')">
+            Mot de passe incorrect
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Message d'erreur -->
+        <div *ngIf="errorMessage()" 
+             [class]="'alert mt-3 ' + getAlertClass()">
+          <mat-icon class="me-2">{{ getAlertIcon() }}</mat-icon>
+          {{ errorMessage() }}
+        </div>
+
+        <!-- Bouton de connexion -->
+        <button mat-raised-button 
+                color="primary" 
+                type="submit" 
+                class="w-100 login-button"
+                [disabled]="!loginForm.valid || loading()">
+          <mat-spinner diameter="20" *ngIf="loading()" class="me-2"></mat-spinner>
+          <span *ngIf="!loading()">Se connecter</span>
+          <span *ngIf="loading()">Connexion...</span>
+        </button>
+
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

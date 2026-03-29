@@ -1,0 +1,270 @@
+<!-- components/utilisateurs/edit-admin/edit-admin.component.html -->
+<div class="modal-header bg-danger text-white">
+    <h5 class="modal-title">
+        <mat-icon class="me-2">admin_panel_settings</mat-icon>
+        {{ isEditMode ? 'Modifier l\'Administrateur' : 'Nouvel Administrateur' }}
+    </h5>
+    <button type="button" class="btn-close btn-close-white" 
+            (click)="onCancel()" aria-label="Fermer"></button>
+</div>
+
+<div class="modal-body">
+    
+    <!-- Affichage des erreurs backend -->
+    <div *ngIf="backendError" class="alert alert-danger backend-error mb-4">
+        <div class="d-flex align-items-start">
+            <mat-icon class="me-2 mt-1">error_outline</mat-icon>
+            <div class="flex-grow-1">
+                <strong class="d-block mb-1">Erreur lors de l'enregistrement :</strong>
+                <div class="error-message">{{ backendError }}</div>
+            </div>
+            <button type="button" class="btn-close ms-2" 
+                    (click)="clearBackendError()" 
+                    aria-label="Fermer"></button>
+        </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+        <div class="row g-3">
+            
+            <!-- Informations de base -->
+            <div class="col-12">
+                <h6 class="border-bottom pb-2 mb-3 text-danger">
+                    <mat-icon class="me-2">person</mat-icon>
+                    Informations Personnelles
+                </h6>
+            </div>
+
+            <!-- Ligne 1: Matricule et Statut -->
+            <div class="col-md-6">
+                <label for="matricule" class="form-label">
+                    Matricule <span class="text-danger">*</span>
+                </label>
+                <input id="matricule" type="text" class="form-control" 
+                       formControlName="matricule" 
+                       placeholder="Ex: ADMIN2024001"
+                       [class.is-invalid]="form.get('matricule')?.invalid && form.get('matricule')?.touched"
+                       [class.is-valid]="form.get('matricule')?.valid">
+                <div class="invalid-feedback" *ngIf="form.get('matricule')?.invalid && form.get('matricule')?.touched">
+                    {{ getFieldError('matricule') }}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label for="statut" class="form-label">
+                    Statut <span class="text-danger">*</span>
+                </label>
+                <select id="statut" class="form-select" 
+                        formControlName="statut"
+                        [class.is-invalid]="form.get('statut')?.invalid && form.get('statut')?.touched">
+                    <option value="ACTIF">🟢 Actif</option>
+                    <option value="INACTIF">🔴 Inactif</option>
+                    <option value="CONGÉ">🟡 Congé</option>
+                </select>
+                <div class="invalid-feedback" *ngIf="form.get('statut')?.invalid && form.get('statut')?.touched">
+                    {{ getFieldError('statut') }}
+                </div>
+            </div>
+
+            <!-- Ligne 2: Nom et Prénom -->
+            <div class="col-md-6">
+                <label for="nom" class="form-label">
+                    Nom <span class="text-danger">*</span>
+                </label>
+                <input id="nom" type="text" class="form-control" 
+                       formControlName="nom"
+                       placeholder="Ex: Dubois"
+                       [class.is-invalid]="form.get('nom')?.invalid && form.get('nom')?.touched"
+                       [class.is-valid]="form.get('nom')?.valid">
+                <div class="invalid-feedback" *ngIf="form.get('nom')?.invalid && form.get('nom')?.touched">
+                    {{ getFieldError('nom') }}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label for="prenom" class="form-label">
+                    Prénom <span class="text-danger">*</span>
+                </label>
+                <input id="prenom" type="text" class="form-control" 
+                       formControlName="prenom"
+                       placeholder="Ex: Marie"
+                       [class.is-invalid]="form.get('prenom')?.invalid && form.get('prenom')?.touched"
+                       [class.is-valid]="form.get('prenom')?.valid">
+                <div class="invalid-feedback" *ngIf="form.get('prenom')?.invalid && form.get('prenom')?.touched">
+                    {{ getFieldError('prenom') }}
+                </div>
+            </div>
+
+            <!-- Ligne 3: Email et Téléphone -->
+            <div class="col-md-6">
+                <label for="email" class="form-label">
+                    Email <span class="text-danger">*</span>
+                </label>
+                <input id="email" type="email" class="form-control" 
+                       formControlName="email"
+                       placeholder="Ex: marie.dubois@hopital.fr"
+                       [class.is-invalid]="form.get('email')?.invalid && form.get('email')?.touched"
+                       [class.is-valid]="form.get('email')?.valid">
+                <div class="invalid-feedback" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
+                    {{ getFieldError('email') }}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label for="telephone" class="form-label">Téléphone</label>
+                <input id="telephone" type="tel" class="form-control" 
+                       formControlName="telephone"
+                       placeholder="Ex: 0123456789">
+            </div>
+
+            <!-- Ligne 4: Sexe et Date de Naissance -->
+            <div class="col-md-6">
+                <label for="sexe" class="form-label">
+                    Sexe <span class="text-danger">*</span>
+                </label>
+                <select id="sexe" class="form-select" 
+                        formControlName="sexe"
+                        [class.is-invalid]="form.get('sexe')?.invalid && form.get('sexe')?.touched">
+                    <option value="M">👨 Masculin</option>
+                    <option value="F">👩 Féminin</option>
+                </select>
+                <div class="invalid-feedback" *ngIf="form.get('sexe')?.invalid && form.get('sexe')?.touched">
+                    {{ getFieldError('sexe') }}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label for="dateNaissance" class="form-label">
+                    Date de Naissance <span class="text-danger">*</span>
+                </label>
+                <input id="dateNaissance" type="date" class="form-control" 
+                       formControlName="dateNaissance"
+                       [class.is-invalid]="form.get('dateNaissance')?.invalid && form.get('dateNaissance')?.touched"
+                       [class.is-valid]="form.get('dateNaissance')?.valid">
+                <div class="invalid-feedback" *ngIf="form.get('dateNaissance')?.invalid && form.get('dateNaissance')?.touched">
+                    {{ getFieldError('dateNaissance') }}
+                </div>
+            </div>
+
+            <!-- Ligne 5: Adresse -->
+            <div class="col-12">
+                <label for="adresse" class="form-label">Adresse</label>
+                <textarea id="adresse" class="form-control" 
+                          formControlName="adresse" 
+                          rows="2"
+                          placeholder="Adresse complète..."></textarea>
+            </div>
+
+            <!-- Ligne 6: Date d'Embauche et Mot de passe -->
+            <div class="col-md-6">
+                <label for="dateEmbauche" class="form-label">Date d'Embauche</label>
+                <input id="dateEmbauche" type="date" class="form-control" 
+                       formControlName="dateEmbauche">
+            </div>
+
+            <div class="col-md-6">
+                <label for="motDePasse" class="form-label">
+                    Mot de passe <span class="text-danger" *ngIf="!isEditMode">*</span>
+                </label>
+                <input id="motDePasse" type="password" class="form-control" 
+                       formControlName="motDePasse"
+                       [attr.placeholder]="isEditMode ? 'Laisser vide pour ne pas changer' : 'Saisir le mot de passe'"
+                       [class.is-invalid]="form.get('motDePasse')?.invalid && form.get('motDePasse')?.touched"
+                       [class.is-valid]="form.get('motDePasse')?.valid">
+                <div class="invalid-feedback" *ngIf="form.get('motDePasse')?.invalid && form.get('motDePasse')?.touched">
+                    {{ getFieldError('motDePasse') }}
+                </div>
+                <small class="form-text text-muted" *ngIf="isEditMode">
+                    <mat-icon class="me-1" style="font-size: 14px;">info</mat-icon>
+                    Laisser vide pour conserver le mot de passe actuel
+                </small>
+                <small class="form-text text-muted" *ngIf="!isEditMode">
+                    <mat-icon class="me-1" style="font-size: 14px;">lock</mat-icon>
+                    Minimum 8 caractères requis pour la sécurité
+                </small>
+            </div>
+
+            <!-- Informations Administrateur -->
+            <div class="col-12 mt-3">
+                <h6 class="border-bottom pb-2 mb-3 text-danger">
+                    <mat-icon class="me-2">security</mat-icon>
+                    Informations Administratives
+                </h6>
+            </div>
+
+            <!-- Ligne 7: Rôle et Droits d'Accès -->
+            <div class="col-md-6">
+                <label for="role" class="form-label">
+                    Rôle <span class="text-danger">*</span>
+                </label>
+                <select id="role" class="form-select" 
+                        formControlName="role"
+                        [class.is-invalid]="form.get('role')?.invalid && form.get('role')?.touched"
+                        [class.is-valid]="form.get('role')?.valid">
+                    <option value="">🛡️ Sélectionner un rôle</option>
+                    <option *ngFor="let role of rolesAdmin" [value]="role">
+                        {{ role }}
+                    </option>
+                </select>
+                <div class="invalid-feedback" *ngIf="form.get('role')?.invalid && form.get('role')?.touched">
+                    {{ getFieldError('role') }}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label for="droitsAccess" class="form-label">Droits d'Accès</label>
+                <input id="droitsAccess" type="text" class="form-control" 
+                       formControlName="droitsAccess" 
+                       placeholder="Ex: GESTION_UTILISATEURS,SUPPRESSION..."
+                       [class.is-valid]="form.get('droitsAccess')?.valid">
+                <small class="form-text text-muted">
+                    <mat-icon class="me-1" style="font-size: 14px;">key</mat-icon>
+                    Saisir les droits séparés par des virgules
+                </small>
+            </div>
+
+        </div>
+
+        <!-- Indicateur de validation -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-danger d-flex align-items-center" role="alert">
+                    <mat-icon class="me-2">admin_panel_settings</mat-icon>
+                    <div>
+                        <small>
+                            <strong>Accès administrateur :</strong> Les champs marqués d'un <span class="text-danger">*</span> sont obligatoires.
+                            {{ isEditMode ? 'Seuls les champs modifiés seront mis à jour.' : 'Cet utilisateur aura des privilèges étendus.' }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message d'erreur global -->
+        <div class="alert alert-warning mt-3" *ngIf="form.invalid && form.touched">
+            <div class="d-flex align-items-center">
+                <mat-icon class="me-2">warning</mat-icon>
+                <div>
+                    <small>Veuillez corriger les erreurs ci-dessus avant de soumettre le formulaire.</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="modal-footer mt-4 border-top pt-3">
+            <button type="button" class="btn btn-outline-secondary" 
+                    (click)="onCancel()"
+                    [disabled]="isLoading">
+                <mat-icon class="me-1">close</mat-icon>
+                Annuler
+            </button>
+            <button type="submit" class="btn btn-danger" 
+                    [disabled]="form.invalid || (form.pristine && isEditMode) || isLoading"
+                    [class.btn-loading]="isLoading">
+                <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+                <mat-icon class="me-1">{{ isEditMode ? 'save' : 'add' }}</mat-icon>
+                {{ isLoading ? 'Traitement...' : (isEditMode ? 'Mettre à jour' : 'Créer l\'administrateur') }}
+            </button>
+        </div>
+    </form>
+</div>

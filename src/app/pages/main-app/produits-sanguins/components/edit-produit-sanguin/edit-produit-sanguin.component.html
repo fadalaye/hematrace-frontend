@@ -1,0 +1,205 @@
+<div class="modal-header bg-primary text-white">
+    <h5 class="modal-title">
+        <mat-icon class="me-2">bloodtype</mat-icon>
+        {{ updateItem()?.id ? 'Modifier' : 'Ajouter' }} Produit Sanguin
+    </h5>
+    <button type="button" class="btn-close btn-close-white" (click)="cancel()" aria-label="Close"></button>
+</div>
+
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="modal-body">
+        <div class="row g-4">
+            <!-- Code Produit avec vérification d'unicité -->
+            <div class="form-group col-xl-6 col-sm-6 col-12">
+                <label class="form-label">Code Produit <span class="text-danger">*</span></label>
+                <div class="input-group">
+                    <input type="text" 
+                           class="form-control" 
+                           formControlName="codeProduit" 
+                           placeholder="Ex: PS-20240115-001"
+                           [class.is-invalid]="(form.get('codeProduit')?.invalid || form.get('codeProduit')?.errors?.['codeTaken']) && form.get('codeProduit')?.touched">
+                    <button *ngIf="!updateItem()?.id" 
+                            type="button" 
+                            class="btn btn-outline-secondary" 
+                            (click)="checkCodeAvailability()"
+                            [disabled]="checkingCode() || !form.get('codeProduit')?.value || form.get('codeProduit')?.value?.length < 3">
+                        <span *ngIf="!checkingCode()">Vérifier</span>
+                        <span *ngIf="checkingCode()" class="d-flex align-items-center">
+                            <mat-spinner diameter="16" class="me-1"></mat-spinner>
+                            Vérification...
+                        </span>
+                    </button>
+                </div>
+                
+                <!-- Messages d'erreur et statut -->
+                <div *ngIf="form.get('codeProduit')?.invalid && form.get('codeProduit')?.touched" 
+                     class="text-danger small mt-1">
+                    <span *ngIf="form.get('codeProduit')?.errors?.['required']">
+                        Le code produit est requis
+                    </span>
+                    <span *ngIf="form.get('codeProduit')?.errors?.['minlength']">
+                        Le code doit avoir au moins 3 caractères
+                    </span>
+                    <span *ngIf="form.get('codeProduit')?.errors?.['codeTaken']">
+                        Ce code est déjà utilisé
+                    </span>
+                </div>
+                
+                <!-- Statut de vérification -->
+                <div *ngIf="!updateItem()?.id && form.get('codeProduit')?.value" 
+                     class="small mt-1" 
+                     [class]="getCodeStatusClass()">
+                    <div *ngIf="checkingCode()" class="d-flex align-items-center">
+                        <mat-spinner diameter="16" class="me-1"></mat-spinner>
+                        Vérification en cours...
+                    </div>
+                    <div *ngIf="!checkingCode() && codeCheckResult()">
+                        {{ getCodeStatusMessage() }}
+                    </div>
+                </div>
+                
+                <div *ngIf="updateItem()?.id" class="text-muted small mt-1">
+                    <mat-icon class="me-1" style="font-size: 14px;">lock</mat-icon>
+                    Code verrouillé en mode modification
+                </div>
+            </div>
+
+            <!-- Type Produit -->
+            <div class="form-group col-xl-6 col-sm-6 col-12">
+                <label class="form-label">Type Produit <span class="text-danger">*</span></label>
+                <select class="form-control" formControlName="typeProduit"
+                        [class.is-invalid]="form.get('typeProduit')?.invalid && form.get('typeProduit')?.touched">
+                    <option value="">Sélectionner</option>
+                    <option value="CGR">CGR (Concentré de Globules Rouges)</option>
+                    <option value="PLS">Plasma</option>
+                    <option value="PFC">Plasma Frais Congelé</option>
+                    <option value="CP">Concentré Plaquettaire</option>
+                    <option value="SANG_TOTAL">Sang Total</option>
+                </select>
+                <div *ngIf="form.get('typeProduit')?.invalid && form.get('typeProduit')?.touched" 
+                     class="text-danger small mt-1">
+                    Le type produit est requis
+                </div>
+            </div>
+
+            <!-- Groupe Sanguin -->
+            <div class="form-group col-xl-6 col-sm-6 col-12">
+                <label class="form-label">Groupe Sanguin <span class="text-danger">*</span></label>
+                <select class="form-control" formControlName="groupeSanguin"
+                        [class.is-invalid]="form.get('groupeSanguin')?.invalid && form.get('groupeSanguin')?.touched">
+                    <option value="">Sélectionner</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="AB">AB</option>
+                    <option value="O">O</option>
+                </select>
+                <div *ngIf="form.get('groupeSanguin')?.invalid && form.get('groupeSanguin')?.touched" 
+                     class="text-danger small mt-1">
+                    Le groupe sanguin est requis
+                </div>
+            </div>
+
+            <!-- Rhesus -->
+            <div class="form-group col-xl-6 col-sm-6 col-12">
+                <label class="form-label">Rhesus <span class="text-danger">*</span></label>
+                <select class="form-control" formControlName="rhesus"
+                        [class.is-invalid]="form.get('rhesus')?.invalid && form.get('rhesus')?.touched">
+                    <option value="">Sélectionner</option>
+                    <option value="+">+ (Positif)</option>
+                    <option value="-">- (Négatif)</option>
+                </select>
+                <div *ngIf="form.get('rhesus')?.invalid && form.get('rhesus')?.touched" 
+                     class="text-danger small mt-1">
+                    Le rhesus est requis
+                </div>
+            </div>
+
+            <!-- Volume (ml) - 450 ou 500 seulement -->
+            <div class="form-group col-xl-6 col-sm-6 col-12">
+                <label class="form-label">Volume (ml) <span class="text-danger">*</span></label>
+                <select class="form-control" formControlName="volumeMl"
+                        [class.is-invalid]="form.get('volumeMl')?.invalid && form.get('volumeMl')?.touched">
+                    <option value="">Sélectionner</option>
+                    <option [value]="450">450 ml</option>
+                    <option [value]="500">500 ml</option>
+                </select>
+                <div *ngIf="form.get('volumeMl')?.invalid && form.get('volumeMl')?.touched" 
+                     class="text-danger small mt-1">
+                    {{ getVolumeErrorMessage() }}
+                </div>
+                <div *ngIf="!form.get('volumeMl')?.invalid && form.get('volumeMl')?.value" class="text-muted small mt-1">
+                    <mat-icon class="me-1" style="font-size: 14px;">check_circle</mat-icon>
+                    Volume valide
+                </div>
+            </div>
+
+            <!-- État - CORRIGÉ : Majuscules -->
+            <div class="form-group col-xl-6 col-sm-6 col-12">
+                <label class="form-label">État <span class="text-danger">*</span></label>
+                <select class="form-control" formControlName="etat"
+                        [class.is-invalid]="form.get('etat')?.invalid && form.get('etat')?.touched">
+                    <option value="">Sélectionner</option>
+                    <option value="DISPONIBLE">DISPONIBLE</option>
+                    <option value="DÉLIVRÉ">DÉLIVRÉ</option>
+                    <option value="UTILISÉ">UTILISÉ</option>
+                    <option value="PÉRIMÉ">PÉRIMÉ</option>
+                </select>
+                <div *ngIf="form.get('etat')?.invalid && form.get('etat')?.touched" 
+                     class="text-danger small mt-1">
+                    L'état est requis
+                </div>
+            </div>
+
+            <!-- Date Prélèvement -->
+            <div class="form-group col-xl-6 col-sm-6 col-12">
+                <label class="form-label">Date Prélèvement <span class="text-danger">*</span></label>
+                <input type="date" 
+                       class="form-control" 
+                       formControlName="datePrelevement"
+                       [max]="today"
+                       [class.is-invalid]="form.get('datePrelevement')?.invalid && form.get('datePrelevement')?.touched">
+                <div *ngIf="form.get('datePrelevement')?.invalid && form.get('datePrelevement')?.touched" 
+                     class="text-danger small mt-1">
+                    <span *ngIf="form.get('datePrelevement')?.errors?.['required']">
+                        La date de prélèvement est requise
+                    </span>
+                </div>
+            </div>
+
+            <!-- Date Péremption -->
+            <div class="form-group col-xl-6 col-sm-6 col-12">
+                <label class="form-label">Date Péremption <span class="text-danger">*</span></label>
+                <input type="date" 
+                       class="form-control" 
+                       formControlName="datePeremption"
+                       [min]="minPeremptionDate"
+                       [class.is-invalid]="form.get('datePeremption')?.invalid && form.get('datePeremption')?.touched">
+                <div *ngIf="form.get('datePeremption')?.invalid && form.get('datePeremption')?.touched" 
+                     class="text-danger small mt-1">
+                    <span *ngIf="form.get('datePeremption')?.errors?.['required']">
+                        La date de péremption est requise
+                    </span>
+                    <span *ngIf="form.get('datePeremption')?.errors?.['dateBeforePrelevement']">
+                        {{ getDatePeremptionErrorMessage() }}
+                    </span>
+                    <span *ngIf="form.get('datePeremption')?.errors?.['dateTooFar']">
+                        {{ getDatePeremptionErrorMessage() }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancel()">
+            <mat-icon class="me-1">close</mat-icon>
+            Annuler
+        </button>
+        <button type="submit" 
+                class="btn btn-primary" 
+                [disabled]="form.invalid || (checkingCode() && !updateItem()?.id) || (!updateItem()?.id && codeCheckResult() !== 'available')">
+            <mat-icon class="me-1">save</mat-icon>
+            {{ updateItem()?.id ? 'Modifier' : 'Ajouter' }}
+        </button>
+    </div>
+</form>

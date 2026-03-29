@@ -1,0 +1,188 @@
+<div class="modal-header">
+    <h5 class="modal-title">
+        <mat-icon class="me-2">{{ updateItem() ? 'edit' : 'add' }}</mat-icon>
+        {{ updateItem() ? 'Modifier la Demande' : 'Nouvelle Demande' }}
+    </h5>
+</div>
+
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="row g-4 mx-4">
+        
+        <!-- Afficher le demandeur actuel -->
+        <div class="col-12" *ngIf="!updateItem() && currentUser">
+            <div class="alert alert-info">
+                <div class="d-flex align-items-center">
+                    <mat-icon class="me-2">person</mat-icon>
+                    <div>
+                        <strong>Demandeur :</strong> 
+                        {{ currentUser.prenom }} {{ currentUser.nom }}
+                        <small class="text-muted d-block">
+                            {{ getDefaultService() }} • {{ currentUser.matricule }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informations Patient -->
+        <div class="col-12">
+            <h6 class="border-bottom pb-2">
+                <mat-icon class="me-2">personal_injury</mat-icon>
+                Informations Patient
+            </h6>
+        </div>
+
+        <div class="form-group col-xl-6 col-sm-6 col-12">
+            <label class="form-label">Nom Patient *</label>
+            <input type="text" class="form-control" formControlName="patientNom" placeholder="Nom">
+            <div *ngIf="form.get('patientNom')?.invalid && form.get('patientNom')?.touched" 
+                class="text-danger small">
+                Le nom du patient est requis
+            </div>
+        </div>
+
+        <div class="form-group col-xl-6 col-sm-6 col-12">
+            <label class="form-label">Prénom Patient *</label>
+            <input type="text" class="form-control" formControlName="patientPrenom" placeholder="Prénom">
+            <div *ngIf="form.get('patientPrenom')?.invalid && form.get('patientPrenom')?.touched" 
+                class="text-danger small">
+                Le prénom du patient est requis
+            </div>
+        </div>
+
+        <div class="form-group col-xl-6 col-sm-6 col-12">
+            <label class="form-label">Date de Naissance *</label>
+            <input type="date" class="form-control" formControlName="patientDateNaissance">
+            <div *ngIf="form.get('patientDateNaissance')?.invalid && form.get('patientDateNaissance')?.touched" 
+                class="text-danger small">
+                La date de naissance est requise
+            </div>
+        </div>
+
+        <div class="form-group col-xl-6 col-sm-6 col-12">
+            <label class="form-label">Numéro Dossier *</label>
+            <input type="text" class="form-control" formControlName="patientNumDossier" placeholder="N° Dossier">
+            <div *ngIf="form.get('patientNumDossier')?.invalid && form.get('patientNumDossier')?.touched" 
+                class="text-danger small">
+                Le numéro de dossier est requis
+            </div>
+        </div>
+
+        <div class="form-group col-xl-6 col-sm-6 col-12">
+            <label class="form-label">Groupe Sanguin Patient *</label>
+            <select class="form-control" formControlName="groupeSanguinPatient">
+                <option value="">Sélectionner</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+            </select>
+            <div *ngIf="form.get('groupeSanguinPatient')?.invalid && form.get('groupeSanguinPatient')?.touched" 
+                class="text-danger small">
+                Le groupe sanguin est requis
+            </div>
+        </div>
+
+        <!-- Informations Demande -->
+        <div class="col-12 mt-3">
+            <h6 class="border-bottom pb-2">
+                <mat-icon class="me-2">inventory</mat-icon>
+                Informations Demande
+            </h6>
+        </div>
+
+        <div class="form-group col-xl-6 col-sm-6 col-12">
+            <label class="form-label">Service Demandeur *</label>
+            <select class="form-control" formControlName="serviceDemandeur">
+                <option value="">Sélectionner</option>
+                <option value="Urgences">Urgences</option>
+                <option value="Chirurgie">Chirurgie</option>
+                <option value="Médecine Interne">Médecine Interne</option>
+                <option value="Pédiatrie">Pédiatrie</option>
+                <option value="Oncologie">Oncologie</option>
+                <option value="Réanimation">Réanimation</option>
+                <option value="Maternité">Maternité</option>
+                <option value="Cardiologie">Cardiologie</option>
+                <option value="Neurologie">Neurologie</option>
+            </select>
+            <div *ngIf="form.get('serviceDemandeur')?.invalid && form.get('serviceDemandeur')?.touched" 
+                class="text-danger small">
+                Le service demandeur est requis
+            </div>
+        </div>
+
+        <div class="form-group col-xl-6 col-sm-6 col-12">
+            <label class="form-label">Type Produit Demandé *</label>
+            <select class="form-control" formControlName="typeProduitDemande">
+                <option value="">Sélectionner</option>
+                <option value="CGR">CGR (Concentré de Globules Rouges)</option>
+                <option value="Plasma">Plasma</option>
+                <option value="Plaquettes">Plaquettes</option>
+                <option value="SangTotal">Sang Total</option>
+                <option value="PFC">Plasma Frais Congelé</option>
+                <option value="CPS">Concentré Plaquettaire Standard</option>
+            </select>
+            <div *ngIf="form.get('typeProduitDemande')?.invalid && form.get('typeProduitDemande')?.touched" 
+                class="text-danger small">
+                Le type de produit est requis
+            </div>
+        </div>
+
+        <div class="form-group col-xl-6 col-sm-6 col-12">
+            <label class="form-label">Quantité Demandée *</label>
+            <input type="number" class="form-control" formControlName="quantiteDemande" min="1" value="1">
+            <div *ngIf="form.get('quantiteDemande')?.invalid && form.get('quantiteDemande')?.touched" 
+                class="text-danger small">
+                La quantité est requise (minimum 1)
+            </div>
+        </div>
+
+        <div class="form-group col-xl-6 col-sm-6 col-12">
+            <label class="form-label">Indication Transfusion *</label>
+            <input type="text" class="form-control" formControlName="indicationTransfusion" 
+                   placeholder="Ex: Anémie, Hémorragie, Chirurgie...">
+            <div *ngIf="form.get('indicationTransfusion')?.invalid && form.get('indicationTransfusion')?.touched" 
+                class="text-danger small">
+                L'indication est requise
+            </div>
+        </div>
+
+        <div class="form-group col-xl-6 col-sm-6 col-12">
+            <label class="form-label">Urgence</label>
+            <div class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" formControlName="urgence">
+                <label class="form-check-label">Demande urgente</label>
+            </div>
+        </div>
+
+        <div class="form-group col-12">
+            <label class="form-label">Observations</label>
+            <textarea class="form-control" formControlName="observations" 
+                      rows="3" placeholder="Observations supplémentaires..."></textarea>
+        </div>
+
+        <div class="form-group col-xl-6 col-sm-6 col-12" *ngIf="updateItem()">
+            <label class="form-label">Statut *</label>
+            <select class="form-control" formControlName="statut">
+                <option value="EN ATTENTE">EN ATTENTE</option>
+                <option value="VALIDÉE">VALIDÉE</option>
+                <option value="REJETÉE">REJETÉE</option>
+            </select>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="cancel()">
+                <mat-icon class="me-1">close</mat-icon>
+                Annuler
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="form.invalid">
+                <mat-icon class="me-1">{{ updateItem() ? 'save' : 'add' }}</mat-icon>
+                {{ updateItem() ? 'Modifier' : 'Créer' }} Demande
+            </button>
+        </div>
+    </div>
+</form>

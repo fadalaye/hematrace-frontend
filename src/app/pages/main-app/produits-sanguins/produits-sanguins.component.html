@@ -1,0 +1,342 @@
+<!-- produits-sanguins.component.html -->
+<div class="container-fluid mt-3">
+  <!-- En-tête avec statistiques -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card bg-light">
+        <div class="card-body py-3">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h4 class="mb-0">
+                <mat-icon class="me-2 text-danger">bloodtype</mat-icon>
+                Gestion des Produits Sanguins
+              </h4>
+              <small class="text-muted">
+                {{ getFilteredCount() }} sur {{ getTotalCount() }} produit(s) sanguin(s)
+              </small>
+            </div>
+            <div class="col-md-6 text-end">
+              <!-- Bouton "Ajouter Produit" - Seulement pour PERSONNEL et Super Users -->
+              <button mat-raised-button color="primary" 
+                      (click)="openProduitFormModal(produitFormTemplate)" 
+                      class="me-2"
+                      [disabled]="loadingIndicator()"
+                      *ngIf="authService.showCreateProductButton()">
+                <mat-icon>add</mat-icon> 
+                Ajouter Produit
+              </button>
+              
+              <!-- Bouton "Exporter Excel" - Tous peuvent voir mais seulement si données -->
+              <button mat-stroked-button color="accent" 
+                      (click)="exportToExcel()"
+                      [disabled]="loadingIndicator() || getFilteredCount() === 0">
+                <mat-icon>download</mat-icon> 
+                Exporter Excel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerte de succès/d'erreur -->
+  <div *ngIf="showAlert()" class="mb-3">
+    <div [class]="'alert alert-' + alertType() + ' alert-dismissible fade show'">
+      <mat-icon class="me-2">
+        {{ alertType() === 'success' ? 'check_circle' : 
+           alertType() === 'danger' ? 'error' : 
+           alertType() === 'warning' ? 'warning' : 'info' }}
+      </mat-icon>
+      {{ alertMessage() }}
+      <button type="button" class="btn-close" (click)="showAlert.set(false)"></button>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="row mb-3">
+    <div class="col-md-3">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Filtrer par type</mat-label>
+        <mat-select (selectionChange)="onTypeFilterChange($event)" 
+                   [value]="selectedType()">
+          <mat-option value="TOUS">Tous les types</mat-option>
+          <mat-option value="SANG">Sang total</mat-option>
+          <mat-option value="PLASMA">Plasma</mat-option>
+          <mat-option value="PLAQUETTES">Plaquettes</mat-option>
+          <mat-option value="GLOBULES_ROUGES">Globules rouges</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    
+    <div class="col-md-3">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Filtrer par groupe</mat-label>
+        <mat-select (selectionChange)="onGroupeFilterChange($event)" 
+                   [value]="selectedGroupe()">
+          <mat-option value="TOUS">Tous les groupes</mat-option>
+          <mat-option value="A">Groupe A</mat-option>
+          <mat-option value="B">Groupe B</mat-option>
+          <mat-option value="AB">Groupe AB</mat-option>
+          <mat-option value="O">Groupe O</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    
+    <div class="col-md-4">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Rechercher un produit...</mat-label>
+        <input matInput 
+               (input)="onFilterChange($event)" 
+               placeholder="Code produit, type, groupe sanguin..." 
+               [disabled]="loadingIndicator()">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+    </div>
+    
+    <div class="col-md-2">
+      <div class="d-flex h-100 align-items-center">
+        <div class="text-muted small">
+          <mat-icon class="me-1" style="font-size: 16px;">filter_list</mat-icon>
+          {{ getFilteredCount() }} résultat(s)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Indicateur de chargement -->
+  <div *ngIf="loadingIndicator()" class="text-center py-5">
+    <div class="mb-3">
+      <mat-spinner diameter="50" class="mx-auto"></mat-spinner>
+    </div>
+    <p class="text-muted">Chargement des produits sanguins...</p>
+  </div>
+
+  <!-- Tableau des produits sanguins -->
+  <div *ngIf="!loadingIndicator()" class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table mat-table [dataSource]="dataSource" matSort class="w-100">
+          
+          <!-- Colonne Code Produit -->
+          <ng-container matColumnDef="codeProduit">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="ps-3">
+              <div class="d-flex align-items-center">
+                <mat-icon class="me-1" style="font-size: 18px;">qr_code</mat-icon>
+                Code Produit
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let produit" class="ps-3">
+              <code class="text-primary">{{ produit.codeProduit }}</code>
+            </td>
+          </ng-container>
+
+          <!-- Colonne Type -->
+          <ng-container matColumnDef="typeProduit">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              Type
+            </th>
+            <td mat-cell *matCellDef="let produit">
+              <span [class]="getTypeBadgeClass(produit.typeProduit)" class="badge">
+                {{ produit.typeProduit }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Colonne Groupe Sanguin -->
+          <ng-container matColumnDef="groupeSanguin">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              Groupe
+            </th>
+            <td mat-cell *matCellDef="let produit">
+              <div class="d-flex align-items-center">
+                <mat-icon class="me-2 text-danger" style="font-size: 18px;">bloodtype</mat-icon>
+                <strong>{{ produit.groupeSanguin }}{{ produit.rhesus }}</strong>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Colonne Rhesus -->
+          <ng-container matColumnDef="rhesus">
+            <th mat-header-cell *matHeaderCellDef>
+              Rhesus
+            </th>
+            <td mat-cell *matCellDef="let produit">
+              <span class="text-muted">
+                {{ produit.rhesus || '-' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Colonne Volume -->
+          <ng-container matColumnDef="volumeMl">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="d-flex align-items-center">
+                <mat-icon class="me-1" style="font-size: 18px;">scale</mat-icon>
+                Volume (ml)
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let produit">
+              {{ produit.volumeMl }} ml
+            </td>
+          </ng-container>
+
+          <!-- Colonne Date Prélèvement -->
+          <ng-container matColumnDef="datePrelevement">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="d-flex align-items-center">
+                <mat-icon class="me-1" style="font-size: 18px;">event</mat-icon>
+                Prélevé le
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let produit">
+              {{ produit.datePrelevement | date:'dd/MM/yyyy' }}
+            </td>
+          </ng-container>
+
+          <!-- Colonne Date Expiration -->
+          <ng-container matColumnDef="datePeremption">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="d-flex align-items-center">
+                <mat-icon class="me-1" style="font-size: 18px;">event_available</mat-icon>
+                Expire le
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let produit">
+              <span [class]="isProduitExpired(produit) ? 'text-danger fw-bold' : 'text-success'">
+                {{ produit.datePeremption | date:'dd/MM/yyyy' }}
+                <mat-icon *ngIf="isProduitExpired(produit)" class="ms-1" style="font-size: 16px;">
+                  warning
+                </mat-icon>
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Colonne État -->
+          <ng-container matColumnDef="etat">
+            <th mat-header-cell *matHeaderCellDef>
+              État
+            </th>
+            <td mat-cell *matCellDef="let produit">
+              <mat-chip 
+                [color]="getEtatChipColor(produit.etat)" 
+                selected
+                [matTooltip]="getEtatTooltip(produit.etat)">
+                <mat-icon class="me-1" style="font-size: 16px;">
+                  {{ getEtatIcon(produit.etat) }}
+                </mat-icon>
+                {{ produit.etat }}
+              </mat-chip>
+            </td>
+          </ng-container>
+
+          <!-- Colonne Actions -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="text-end pe-3">
+              Actions
+            </th>
+            <td mat-cell *matCellDef="let produit" class="text-end pe-3">
+              <div class="btn-group" role="group">
+                <!-- Bouton Modifier - PERSONNEL et Super Users -->
+                <button mat-icon-button 
+                        color="primary" 
+                        matTooltip="Modifier"
+                        (click)="openProduitFormModal(produitFormTemplate, produit)"
+                        class="me-1"
+                        *ngIf="authService.canUpdateProduct()">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                
+                <!-- Bouton Supprimer - Seulement Super Users (ADMIN, CHEF_SERVICE) -->
+                <button mat-icon-button 
+                        color="warn" 
+                        matTooltip="Supprimer"
+                        (click)="deleteProduit(produit.id)"
+                        [disabled]="savingIndicator()"
+                        *ngIf="authService.canDeleteProduct()">
+                  <mat-icon>delete</mat-icon>
+                </button>
+
+                <!-- Message si pas de droits pour les actions -->
+                <span *ngIf="!authService.canUpdateProduct() && !authService.canDeleteProduct()" 
+                      class="text-muted small">
+                  <mat-icon class="me-1" style="font-size: 16px;">lock</mat-icon>
+                  Consultation seulement
+                </span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- En-tête et lignes -->
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-light"></tr>
+          <tr mat-row 
+              *matRowDef="let row; columns: displayedColumns;" 
+              class="hover-row"></tr>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <mat-paginator [pageSize]="10" 
+                    [pageSizeOptions]="[5, 10, 25, 50]" 
+                    showFirstLastButtons
+                    class="border-top">
+      </mat-paginator>
+
+      <!-- Message si aucun résultat -->
+      <div *ngIf="getFilteredCount() === 0 && !loadingIndicator()" 
+           class="text-center py-5 text-muted">
+        <mat-icon class="display-1 text-muted mb-3">inventory_2</mat-icon>
+        <h5>Aucun produit sanguin trouvé</h5>
+        <p *ngIf="selectedType() !== 'TOUS' || selectedGroupe() !== 'TOUS' || searchTerm()">
+          Aucun résultat pour les filtres actuels.
+          <a href="javascript:void(0)" 
+             (click)="resetFilters()"
+             class="text-primary text-decoration-none">
+            Réinitialiser les filtres
+          </a>
+        </p>
+        <p *ngIf="selectedType() === 'TOUS' && selectedGroupe() === 'TOUS' && !searchTerm()">
+          Aucun produit sanguin enregistré. 
+          
+          <!-- Lien pour ajouter seulement si l'utilisateur a le droit -->
+          <a href="javascript:void(0)" 
+             *ngIf="authService.showCreateProductButton()"
+             (click)="openProduitFormModal(produitFormTemplate)"
+             class="text-primary text-decoration-none">
+            Ajouter le premier produit
+          </a>
+          <span *ngIf="!authService.showCreateProductButton()">
+            Contactez le personnel pour ajouter des produits.
+          </span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Indicateur de sauvegarde -->
+  <div *ngIf="savingIndicator()" class="position-fixed top-0 start-50 translate-middle-x mt-3">
+    <div class="alert alert-info d-flex align-items-center shadow">
+      <mat-spinner diameter="20" class="me-2"></mat-spinner>
+      <span>Sauvegarde en cours...</span>
+    </div>
+  </div>
+</div>
+
+<!-- Template du formulaire modal -->
+<ng-template #produitFormTemplate>
+  <div class="modal-header">
+    <h5 class="modal-title">
+      <mat-icon class="me-2 text-danger">bloodtype</mat-icon>
+      {{ selectedProduit() ? 'Modifier' : 'Ajouter' }} Produit Sanguin
+    </h5>
+    <button type="button" class="btn-close" (click)="closeProduitModal()"></button>
+  </div>
+  <div class="modal-body">
+    <app-edit-produit-sanguin 
+      [updateItem]="selectedProduit()"
+      (addedData)="addProduit($event)"
+      (saved)="updateProduit($event)"
+      (cancelled)="closeProduitModal()">
+    </app-edit-produit-sanguin>
+  </div>
+</ng-template>

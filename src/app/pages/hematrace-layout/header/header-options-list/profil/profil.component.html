@@ -1,0 +1,221 @@
+<div class="profile-container">
+  <div class="row">
+    <!-- Sidebar Profil -->
+    <div class="col-md-4">
+      <div class="card profile-card">
+        <div class="card-body text-center">
+          <!-- Avatar -->
+          <div class="profile-avatar">
+            <div class="avatar-initials">
+              {{ getInitials() }}
+            </div>
+          </div>
+          
+          <!-- Informations principales -->
+          <h4 class="mt-3">{{ currentUser()?.prenom }} {{ currentUser()?.nom }}</h4>
+          <p class="text-muted">{{ getFormattedRole() }}</p>
+          
+          <div class="profile-stats">
+            <div class="stat-item">
+              <strong>Matricule</strong>
+              <p>{{ currentUser()?.matricule }}</p>
+            </div>
+            <div class="stat-item">
+              <strong>Statut</strong>
+              <p class="text-success">{{ currentUser()?.statut || 'ACTIF' }}</p>
+            </div>
+            <div class="stat-item">
+              <strong>Embauché le</strong>
+              <p>{{ getFormattedHireDate() }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenu principal -->
+    <div class="col-md-8">
+      <!-- Messages -->
+      <div *ngIf="successMessage()" class="alert alert-success">
+        {{ successMessage() }}
+      </div>
+      
+      <div *ngIf="errorMessage()" class="alert alert-danger">
+        {{ errorMessage() }}
+      </div>
+
+      <!-- Informations personnelles -->
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Informations personnelles</h5>
+          <button 
+            *ngIf="!isEditing()" 
+            class="btn btn-outline-primary btn-sm"
+            (click)="toggleEdit()">
+            <i class="bi bi-pencil me-1"></i>Modifier
+          </button>
+          <div *ngIf="isEditing()">
+            <button class="btn btn-primary btn-sm me-2" (click)="saveProfile()" [disabled]="isLoading()">
+              <span *ngIf="isLoading()" class="spinner-border spinner-border-sm me-1"></span>
+              Sauvegarder
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" (click)="toggleEdit()">Annuler</button>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <form [formGroup]="profileForm" *ngIf="isEditing(); else viewMode">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Nom</label>
+                  <input type="text" class="form-control" formControlName="nom">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Prénom</label>
+                  <input type="text" class="form-control" formControlName="prenom">
+                </div>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Email</label>
+                  <input type="email" class="form-control" formControlName="email">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Téléphone</label>
+                  <input type="tel" class="form-control" formControlName="telephone">
+                </div>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Sexe</label>
+                  <select class="form-select" formControlName="sexe">
+                    <option value="">Sélectionner</option>
+                    <option value="M">Masculin</option>
+                    <option value="F">Féminin</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Date de naissance</label>
+                  <input type="date" class="form-control" formControlName="dateNaissance">
+                </div>
+              </div>
+            </div>
+          </form>
+
+          <ng-template #viewMode>
+            <div class="row">
+              <div class="col-md-6">
+                <p><strong>Nom:</strong> {{ currentUser()?.nom }}</p>
+                <p><strong>Prénom:</strong> {{ currentUser()?.prenom }}</p>
+                <p><strong>Email:</strong> {{ currentUser()?.email }}</p>
+              </div>
+              <div class="col-md-6">
+                <p><strong>Téléphone:</strong> {{ currentUser()?.telephone || 'Non renseigné' }}</p>
+                <p><strong>Sexe:</strong> {{ currentUser()?.sexe === 'M' ? 'Masculin' : 'Féminin' }}</p>
+                <p><strong>Date de naissance:</strong> {{ currentUser()?.dateNaissance }}</p>
+              </div>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+
+      <!-- Changement de mot de passe -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h5 class="mb-0">Changer le mot de passe</h5>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Mot de passe actuel</label>
+                  <input type="password" class="form-control" formControlName="currentPassword">
+                </div>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Nouveau mot de passe</label>
+                  <input type="password" class="form-control" formControlName="newPassword">
+                  <small class="form-text text-muted">Minimum 6 caractères</small>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Confirmer le mot de passe</label>
+                  <input type="password" class="form-control" formControlName="confirmPassword">
+                </div>
+              </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" [disabled]="passwordForm.invalid || isLoading()">
+              <span *ngIf="isLoading()" class="spinner-border spinner-border-sm me-1"></span>
+              Changer le mot de passe
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Informations professionnelles -->
+      <div class="card mt-4" *ngIf="hasProfessionalInfo()">
+        <div class="card-header">
+          <h5 class="mb-0">Informations professionnelles</h5>
+        </div>
+        <div class="card-body">
+          <div class="row" *ngIf="getProfessionalInfo() as professionalInfo">
+            <div class="col-md-6">
+              <p><strong>Type:</strong> {{ professionalInfo.type }}</p>
+              
+              <!-- Informations Médecin -->
+              <p *ngIf="professionalInfo.specialite">
+                <strong>Spécialité:</strong> {{ professionalInfo.specialite }}
+              </p>
+              
+              <!-- Informations Personnel -->
+              <p *ngIf="professionalInfo.fonction">
+                <strong>Fonction:</strong> {{ professionalInfo.fonction }}
+              </p>
+              
+              <!-- Informations Chef de Service -->
+              <p *ngIf="professionalInfo.serviceDirige">
+                <strong>Service dirigé:</strong> {{ professionalInfo.serviceDirige }}
+              </p>
+            </div>
+            
+            <div class="col-md-6">
+              <!-- Informations Chef de Service -->
+              <p *ngIf="professionalInfo.departement">
+                <strong>Département:</strong> {{ professionalInfo.departement }}
+              </p>
+              
+              <!-- Informations Admin -->
+              <p *ngIf="professionalInfo.role">
+                <strong>Rôle:</strong> {{ professionalInfo.role }}
+              </p>
+              
+              <p *ngIf="professionalInfo.droitsAccess">
+                <strong>Droits d'accès:</strong> {{ professionalInfo.droitsAccess }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

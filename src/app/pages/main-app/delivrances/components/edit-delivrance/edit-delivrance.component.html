@@ -1,0 +1,395 @@
+<div class="modal-header bg-primary text-white">
+    <h5 class="modal-title">
+        <mat-icon class="me-2">{{ updateItem() ? 'edit' : 'inventory_2' }}</mat-icon>
+        {{ updateItem() ? 'Modifier la Délivrance' : 'Nouvelle Délivrance' }}
+    </h5>
+    <button type="button" class="btn-close btn-close-white" (click)="cancel()" aria-label="Close"></button>
+</div>
+
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="modal-body">
+        
+        <!-- Afficher le personnel actuel -->
+        <div class="col-12 mb-3" *ngIf="!updateItem() && currentUser">
+            <div class="alert alert-info">
+                <div class="d-flex align-items-center">
+                    <mat-icon class="me-2">badge</mat-icon>
+                    <div>
+                        <strong>Personnel délivreur :</strong> 
+                        {{ currentUser.prenom }} {{ currentUser.nom }}
+                        <small class="text-muted d-block">
+                            {{ getFonctionUtilisateur() }} • {{ currentUser.matricule }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sélection de la demande -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h6 class="mb-3">
+                    <mat-icon class="me-2 text-primary">list_alt</mat-icon>
+                    Sélection de la Demande
+                    <span class="badge bg-secondary ms-2">
+                        {{ demandesValidees().length }} demande(s)
+                    </span>
+                </h6>
+                
+                <!-- Champ de recherche -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <mat-form-field appearance="outline" class="w-100">
+                            <mat-label>Rechercher une demande...</mat-label>
+                            <input matInput 
+                                   type="text" 
+                                   (input)="onSearchChange($event)"
+                                   placeholder="Nom patient, service, groupe sanguin...">
+                            <mat-icon matSuffix>search</mat-icon>
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <!-- Liste des demandes -->
+                <div class="row">
+                    <div class="col-12">
+                        <!-- Aucune demande -->
+                        @if (getDemandesFiltrees().length === 0) {
+                            <div class="alert alert-warning text-center">
+                                <mat-icon class="me-2">warning</mat-icon>
+                                Aucune demande validée trouvée
+                            </div>
+                        } 
+                        <!-- Liste des demandes -->
+                        @else {
+                            <div class="demandes-list">
+                                @for (demande of getDemandesFiltrees(); track demande.id) {
+                                    <!-- Demande avec produits compatibles -->
+                                    @if (getProduitsCompatibles(demande).length > 0) {
+                                        <div class="card mb-3 demande-card border-success cursor-pointer" 
+                                             [class.selected]="form.get('demandeId')?.value === demande.id"
+                                             (click)="selectDemande(demande)">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div class="flex-grow-1">
+                                                        <div class="d-flex align-items-center mb-2">
+                                                            <h6 class="mb-0 text-primary">
+                                                                {{ demande.patientPrenom }} {{ demande.patientNom }}
+                                                            </h6>
+                                                            <span class="badge ms-2" 
+                                                                  [ngClass]="getClasseStatutCompatibilite(demande)">
+                                                                {{ getStatutCompatibilite(demande) }}
+                                                            </span>
+                                                        </div>
+                                                        
+                                                        <div class="row text-muted small">
+                                                            <div class="col-md-4">
+                                                                <mat-icon class="me-1" style="font-size: 16px;">local_hospital</mat-icon>
+                                                                {{ demande.serviceDemandeur }}
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <mat-icon class="me-1" style="font-size: 16px;">bloodtype</mat-icon>
+                                                                <span class="badge bg-danger">{{ demande.groupeSanguinPatient }}</span>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <mat-icon class="me-1" style="font-size: 16px;">inventory</mat-icon>
+                                                                {{ demande.typeProduitDemande }}
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="mt-2">
+                                                            <small class="text-success">
+                                                                <mat-icon class="me-1" style="font-size: 16px;">check_circle</mat-icon>
+                                                                {{ getTexteStatutCompatibilite(demande) }}
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="text-end ms-3">
+                                                        <span class="badge bg-success fs-6">
+                                                            {{ getProduitsCompatibles(demande).length }}
+                                                        </span>
+                                                        <div class="mt-1">
+                                                            <small class="text-muted">produit(s)</small>
+                                                        </div>
+                                                        @if (form.get('demandeId')?.value === demande.id) {
+                                                            <div class="mt-2">
+                                                                <mat-icon class="text-success">check_circle</mat-icon>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    } 
+                                    <!-- Demande sans produits compatibles -->
+                                    @else {
+                                        <div class="card mb-3 demande-card border-warning opacity-75 cursor-pointer" 
+                                             [class.selected]="form.get('demandeId')?.value === demande.id"
+                                             (click)="selectDemande(demande)">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div class="flex-grow-1">
+                                                        <div class="d-flex align-items-center mb-2">
+                                                            <h6 class="mb-0 text-muted">
+                                                                {{ demande.patientPrenom }} {{ demande.patientNom }}
+                                                            </h6>
+                                                            <span class="badge ms-2 bg-warning">
+                                                                sans stock
+                                                            </span>
+                                                        </div>
+                                                        
+                                                        <div class="row text-muted small">
+                                                            <div class="col-md-4">
+                                                                <mat-icon class="me-1" style="font-size: 16px;">local_hospital</mat-icon>
+                                                                {{ demande.serviceDemandeur }}
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <mat-icon class="me-1" style="font-size: 16px;">bloodtype</mat-icon>
+                                                                <span class="badge bg-danger">{{ demande.groupeSanguinPatient }}</span>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <mat-icon class="me-1" style="font-size: 16px;">inventory</mat-icon>
+                                                                {{ demande.typeProduitDemande }}
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="mt-2">
+                                                            <small class="text-warning">
+                                                                <mat-icon class="me-1" style="font-size: 16px;">warning</mat-icon>
+                                                                Aucun produit compatible disponible
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="text-end ms-3">
+                                                        <span class="badge bg-warning fs-6">0</span>
+                                                        <div class="mt-1">
+                                                            <small class="text-muted">produit(s)</small>
+                                                        </div>
+                                                        @if (form.get('demandeId')?.value === demande.id) {
+                                                            <div class="mt-2">
+                                                                <mat-icon class="text-warning">check_circle</mat-icon>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Statistiques -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="d-flex flex-wrap gap-2 justify-content-center">
+                            <span class="badge bg-primary">
+                                <mat-icon class="me-1">list</mat-icon>
+                                Total: {{ demandesValidees().length }}
+                            </span>
+                            <span class="badge bg-success">
+                                <mat-icon class="me-1">check</mat-icon>
+                                Avec stock: {{ getDemandesAvecProduitsCompatibles().length }}
+                            </span>
+                            <span class="badge bg-warning">
+                                <mat-icon class="me-1">warning</mat-icon>
+                                Sans stock: {{ getDemandesSansProduitsCompatibles().length }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sélection des produits -->
+        @if (getSelectedDemande()) {
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h6 class="mb-3">
+                        <mat-icon class="me-2 text-success">bloodtype</mat-icon>
+                        Sélection des Produits Compatibles
+                        <span class="badge bg-primary ms-2">
+                            {{ produitsCompatibles().length }} produit(s) compatible(s)
+                        </span>
+                    </h6>
+                    
+                    @if (produitsCompatibles().length === 0) {
+                        <div class="alert alert-warning">
+                            <mat-icon class="me-2">warning</mat-icon>
+                            Aucun produit compatible disponible pour cette demande.
+                        </div>
+                    } @else {
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">Produits sanguins disponibles</h6>
+                                <div class="row">
+                                    <div class="col-12">
+                                        @for (produit of produitsCompatibles(); track produit.id) {
+                                            @if (produit.id !== undefined) {
+                                                <div class="form-check mb-3 p-3 border rounded">
+                                                    <input class="form-check-input" 
+                                                           type="checkbox" 
+                                                           [id]="'produit-' + produit.id"
+                                                           [checked]="isProduitSelected(produit.id)"
+                                                           (change)="onProduitSelectionChange($event, produit.id)">
+                                                    <label class="form-check-label w-100" [for]="'produit-' + produit.id">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <strong class="d-block">{{ produit.codeProduit }}</strong>
+                                                                <small class="text-muted d-block">
+                                                                    {{ produit.typeProduit }} • 
+                                                                    {{ produit.groupeSanguin }}{{ produit.rhesus }} • 
+                                                                    Expire le: {{ produit.datePeremption | date:'dd/MM/yyyy' }}
+                                                                </small>
+                                                            </div>
+                                                            <span class="badge bg-success">
+                                                                <mat-icon class="me-1" style="font-size: 14px;">check</mat-icon>
+                                                                Compatible
+                                                            </span>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Produits sélectionnés -->
+                        @if (selectedProduitIds().length > 0) {
+                            <div class="card mt-3 bg-success text-white">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <mat-icon class="me-2">check_circle</mat-icon>
+                                        Produits Sélectionnés ({{ selectedProduitIds().length }})
+                                    </h6>
+                                    <div class="row">
+                                        @for (produit of getSelectedProduits(); track produit.id) {
+                                            @if (produit.id !== undefined) {
+                                                <div class="col-md-6 mb-2">
+                                                    <div class="d-flex align-items-center">
+                                                        <mat-icon class="me-2">bloodtype</mat-icon>
+                                                        <div>
+                                                            <strong>{{ produit.codeProduit }}</strong><br>
+                                                            <small>
+                                                                {{ produit.typeProduit }} • 
+                                                                {{ produit.groupeSanguin }}{{ produit.rhesus }}
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Informations Délivrance -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h6 class="mb-3">
+                    <mat-icon class="me-2">local_shipping</mat-icon>
+                    Informations Délivrance
+                </h6>
+            </div>
+
+            <div class="col-xl-6 col-sm-6 col-12 mb-3">
+                <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Destination *</mat-label>
+                    <mat-select formControlName="destination">
+                        <mat-option value="">Sélectionner</mat-option>
+                        <mat-option value="Urgences">Urgences</mat-option>
+                        <mat-option value="Chirurgie">Chirurgie</mat-option>
+                        <mat-option value="Médecine Interne">Médecine Interne</mat-option>
+                        <mat-option value="Pédiatrie">Pédiatrie</mat-option>
+                        <mat-option value="Oncologie">Oncologie</mat-option>
+                        <mat-option value="Réanimation">Réanimation</mat-option>
+                        <mat-option value="Bloc Opératoire">Bloc Opératoire</mat-option>
+                        <mat-option value="Hématologie">Hématologie</mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="form.get('destination')?.invalid && form.get('destination')?.touched">
+                        La destination est requise
+                    </mat-error>
+                </mat-form-field>
+            </div>
+
+            <div class="col-xl-6 col-sm-6 col-12 mb-3">
+                <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Mode de Transport *</mat-label>
+                    <mat-select formControlName="modeTransport">
+                        <mat-option value="">Sélectionner</mat-option>
+                        <mat-option value="Interne">Transport Interne</mat-option>
+                        <mat-option value="Externe">Transport Externe</mat-option>
+                        <mat-option value="Urgent">Transport Urgent</mat-option>
+                        <mat-option value="Standard">Transport Standard</mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="form.get('modeTransport')?.invalid && form.get('modeTransport')?.touched">
+                        Le mode de transport est requis
+                    </mat-error>
+                </mat-form-field>
+            </div>
+
+            <div class="col-12 mb-3">
+                <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Observations</mat-label>
+                    <textarea matInput 
+                              formControlName="observations" 
+                              rows="3" 
+                              placeholder="Observations sur la délivrance..."></textarea>
+                </mat-form-field>
+            </div>
+        </div>
+
+        <!-- Résumé -->
+        @if (getSelectedDemande() && selectedProduitIds().length > 0) {
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <mat-icon class="me-2">summarize</mat-icon>
+                                Récapitulatif
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Patient:</strong> {{ getSelectedDemande()?.patientPrenom }} {{ getSelectedDemande()?.patientNom }}<br>
+                                    <strong>Produits:</strong> {{ selectedProduitIds().length }} unité(s)<br>
+                                    <strong>Destination:</strong> {{ form.get('destination')?.value }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Compatibilité:</strong> 
+                                    <span class="badge bg-success">Vérifiée ✓</span><br>
+                                    <strong>Transport:</strong> {{ form.get('modeTransport')?.value }}<br>
+                                    <strong>Date:</strong> {{ (updateItem()?.dateHeureDelivrance || today) | date:'dd/MM/yyyy HH:mm' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancel()">
+            <mat-icon class="me-1">close</mat-icon>
+            Annuler
+        </button>
+        <button type="submit" 
+                class="btn btn-primary" 
+                [disabled]="form.invalid || selectedProduitIds().length === 0">
+            <mat-icon class="me-1">{{ updateItem() ? 'save' : 'inventory_2' }}</mat-icon>
+            {{ updateItem() ? 'Modifier' : 'Créer' }} Délivrance
+        </button>
+    </div>
+</form>

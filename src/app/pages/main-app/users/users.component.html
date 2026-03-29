@@ -1,138 +1,154 @@
-<div class="mx-4 my-1 border-0">
+<div [class]="isCard() ? '' : 'container-fluid p-4'">
+    @if (!isCard()) {
     <app-content-header [title]="title" [subRoute]="title"></app-content-header>
+    }
 
-    <div class="d-flex align-items-center justify-content-end">
-        <input type="text"
-        class="form-control border-white px-2 py-1 search-table-input" 
-        placeholder="Search..."
-        (input)="onFilterChange($event)"
-    >
-    <button class="py-0 border-0 ms-2" mat-icon-button (click)="exportToExcel()">
-        <i class="bi bi-file-earmark-excel-fill text-success fs-2"></i>
-    </button>
-    <button class="ms-2" mat-raised-button color="accent">
-        <mat-icon ria-hidden="false" aria-label="add icon" fontIcon="add"></mat-icon>
-        ADD USER
-    </button>
+    <!-- Filtres et Actions -->
+    <div class="d-flex align-items-center justify-content-end mb-3 gap-2">
+        <!-- Recherche -->
+        <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Rechercher...</mat-label>
+            <input matInput 
+                   placeholder="Nom, email, téléphone..." 
+                   (input)="onFilterChange($event)">
+            <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+        
+        <!-- Bouton Export -->
+        <button mat-icon-button 
+                (click)="exportToExcel()" 
+                matTooltip="Exporter en Excel"
+                color="primary">
+            <mat-icon class="text-success">download</mat-icon>
+        </button>
+        
+        <!-- Bouton Ajouter Utilisateur -->
+        <button mat-raised-button 
+                color="accent" 
+                (click)="openUserFormModal(userFormTemplate)"
+                matTooltip="Ajouter un nouvel utilisateur">
+            <mat-icon>add</mat-icon> Ajouter Utilisateur
+        </button>
     </div>
-    <div class="col-md-12 mb-3 mt-1">
 
-        <ngx-datatable #table
-            class="material rounded"
-            [rows]="users()"
-            [columnMode]="columnMode.force"
-            [headerHeight]="50"
-            [summaryRow]="true"
-            [footerHeight]="50"
-            [scrollbarH]="true"
-            [loadingIndicator]="loadingIndicator()"
-            rowHeight="auto"
-            [count]="users().length"
-            [offset]="1"
-            [limit]="10"
-            [rows]="users()"
-            (page)="onPageChange($event)"
-            (sort)="onSortChange($event)"
-        >
-
-            <ngx-datatable-column prop="photo" [sortable]="true">
-                <ng-template 
-                    let-column="column" 
-                    ngx-datatable-header-template 
-                    let-sort="sortFn"
-                    >
-                    <span class="text-white fw-medium tableHeader">PHOTO</span>
-                </ng-template>
-                <ng-template let-value="value" ngx-datatable-cell-template>
-                    <img [src]="value" class="bg-color avatar-image rounded-circle">
-                </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column prop="name" [sortable]="true">
-                <ng-template 
-                    let-column="column" 
-                    ngx-datatable-header-template 
-                    let-sort="sortFn"
-                    >
-                    <span class="text-white fw-medium tableHeader">NAME</span>
-                </ng-template>
-                <ng-template let-value="value" ngx-datatable-cell-template>
-                    {{ value }}
-                </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column prop="dob" [sortable]="true">
-                <ng-template 
-                    let-column="column" 
-                    ngx-datatable-header-template 
-                    let-sort="sortFn"
-                    >
-                    <span class="text-white fw-medium tableHeader">GENDER & DOB</span>
-                </ng-template>
-                <ng-template let-row="row" ngx-datatable-cell-template>
-                    {{ row?.gender }}
-                    <p>
-                    {{ row?.dob | date:'MMM d, y' }}
-                    </p>
-                </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column prop="email" [sortable]="true">
-                <ng-template 
-                    let-column="column" 
-                    ngx-datatable-header-template 
-                    let-sort="sortFn"
-                    >
-                    <span class="text-white fw-medium tableHeader">EMAIL</span>
-                </ng-template>
-                <ng-template let-value="value" ngx-datatable-cell-template>
-                    {{ value }}
-                </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column prop="phone" [sortable]="true">
-                <ng-template 
-                    let-column="column" 
-                    ngx-datatable-header-template 
-                    let-sort="sortFn"
-                    >
-                    <span class="text-white fw-medium tableHeader">PHONE</span>
-                </ng-template>
-                <ng-template let-value="value" ngx-datatable-cell-template>
-                    {{ value }}
-                </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column prop="address" [sortable]="true">
-                <ng-template 
-                    let-column="column" 
-                    ngx-datatable-header-template 
-                    let-sort="sortFn"
-                    >
-                    <span class="text-white fw-medium tableHeader">ADDRESS</span>
-                </ng-template>
-                <ng-template let-value="value" ngx-datatable-cell-template>
-                    {{ value }}
-                </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column [frozenRight]="true">
-                <ng-template ngx-datatable-header-template>
-                    <span class="text-white fw-medium tableHeader">ACTIONS</span>
-                </ng-template>
-                <ng-template let-row="row" ngx-datatable-cell-template>
-                    <button class="btn btn-sm mx-1">
-                        <i class="fa fa-edit primary-color"></i>
-                    </button>
-                    <button class="btn btn-sm mx-1" (click)="deleteItem(row)">
-                        <i class="fa fa-trash error-color"></i>
-                    </button>
-                    
-                </ng-template>
-            </ngx-datatable-column>
+    <!-- Tableau Material -->
+    <div class="mat-elevation-z8">
+        <table mat-table [dataSource]="dataSource" matSort class="w-100">
             
-        </ngx-datatable>
+            <!-- Colonne Photo -->
+            <ng-container matColumnDef="photo">
+                <th mat-header-cell *matHeaderCellDef>Photo</th>
+                <td mat-cell *matCellDef="let user">
+                    <img [src]="user.photo" 
+                         class="avatar-image rounded-circle"
+                         style="width: 40px; height: 40px; object-fit: cover;"
+                         alt="Photo de {{ user.name }}">
+                </td>
+            </ng-container>
 
+            <!-- Colonne Nom -->
+            <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Nom</th>
+                <td mat-cell *matCellDef="let user">{{ user.name }}</td>
+            </ng-container>
+
+            <!-- Colonne Genre & Date Naissance -->
+            <ng-container matColumnDef="genderDob">
+                <th mat-header-cell *matHeaderCellDef>Genre & Date Naissance</th>
+                <td mat-cell *matCellDef="let user">
+                    <div class="d-flex flex-column">
+                        <span class="text-capitalize">{{ user.gender }}</span>
+                        <small class="text-muted">{{ user.dob | date:'dd/MM/yyyy' }}</small>
+                    </div>
+                </td>
+            </ng-container>
+
+            <!-- Colonne Email -->
+            <ng-container matColumnDef="email">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Email</th>
+                <td mat-cell *matCellDef="let user">
+                    <a [href]="'mailto:' + user.email" class="text-decoration-none">
+                        {{ user.email }}
+                    </a>
+                </td>
+            </ng-container>
+
+            <!-- Colonne Téléphone -->
+            <ng-container matColumnDef="phone">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Téléphone</th>
+                <td mat-cell *matCellDef="let user">
+                    <a [href]="'tel:' + user.phone" class="text-decoration-none">
+                        {{ user.phone }}
+                    </a>
+                </td>
+            </ng-container>
+
+            <!-- Colonne Adresse -->
+            <ng-container matColumnDef="address">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Adresse</th>
+                <td mat-cell *matCellDef="let user">{{ user.address }}</td>
+            </ng-container>
+
+            <!-- Colonne Actions -->
+            <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>Actions</th>
+                <td mat-cell *matCellDef="let user">
+                    <div class="d-flex gap-1">
+                        <!-- Modifier -->
+                        <button mat-icon-button color="primary" 
+                                (click)="openUserFormModal(userFormTemplate, user)"
+                                matTooltip="Modifier">
+                            <mat-icon>edit</mat-icon>
+                        </button>
+                        
+                        <!-- Supprimer -->
+                        <button mat-icon-button color="warn" 
+                                (click)="deleteItem(user)"
+                                matTooltip="Supprimer">
+                            <mat-icon>delete</mat-icon>
+                        </button>
+                    </div>
+                </td>
+            </ng-container>
+
+            <!-- En-têtes et lignes -->
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+            <!-- Ligne vide si pas de données -->
+            <tr class="mat-row" *matNoDataRow>
+                <td class="mat-cell text-center py-4" [attr.colspan]="displayedColumns.length">
+                    <div class="d-flex flex-column align-items-center text-muted">
+                        <mat-icon class="mb-2" style="font-size: 48px; opacity: 0.3;">people</mat-icon>
+                        <p class="mb-0">Aucun utilisateur trouvé</p>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Pagination -->
+        <mat-paginator [pageSizeOptions]="isCard() ? [3] : [5, 10, 20]" 
+                       [pageSize]="isCard() ? 3 : 10"
+                       showFirstLastButtons
+                       [length]="users().length">
+        </mat-paginator>
     </div>
 </div>
 
+<!-- Template du formulaire modal -->
+<ng-template #userFormTemplate>
+    <div class="modal-header d-flex align-items-center justify-content-between">
+        <h4 class="modal-title mb-0">
+            <mat-icon class="me-2">{{ updateItem() ? 'edit' : 'person_add' }}</mat-icon>
+            {{ updateItem() ? 'Modifier' : 'Ajouter' }} Utilisateur
+        </h4>
+        <button type="button" class="btn-close" aria-label="Close" (click)="closeUserModal()"></button>
+    </div>
+    <div class="modal-body">
+        <app-edit-user 
+            [updateItem]="updateItem()!" 
+            (addedData)="addUser($event)" 
+            (updateData)="updateUser($event)">
+        </app-edit-user>
+    </div>
+</ng-template>
