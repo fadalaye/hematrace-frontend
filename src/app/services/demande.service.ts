@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Demande } from '../interfaces/demande.interface';
+import { environment } from '../../environments/environment';
 
 @Injectable({
     providedIn: 'root'
 })
 export class DemandeService {
-    private apiUrl = '${environment.apiUrl}/demandes';
+    private apiUrl = `${environment.apiUrl}/demandes`;
 
     private httpOptions = {
         headers: new HttpHeaders({

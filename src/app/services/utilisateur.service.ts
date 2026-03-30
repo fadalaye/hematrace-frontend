@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, throwError, catchError, tap } from 'rxjs';
 import { AnyUtilisateur, getUserType } from '../interfaces/any-utilisateur.interface';
+import { environment } from '../../environments/environment';
 
 export interface ApiResponse<T> {
   data: T;
@@ -15,7 +16,7 @@ export interface ApiResponse<T> {
 })
 export class UtilisateurService {
   private http = inject(HttpClient);
-  private readonly baseUrl = '${environment.apiUrl}';
+  private readonly baseUrl = `${environment.apiUrl}`;
 
 
   private readonly httpOptions = {

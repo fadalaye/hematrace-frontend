@@ -32,7 +32,7 @@ export class AuthService {
   private router = inject(Router);
   
   //private apiUrl = 'http://localhost:8080/api/auth';
-  private apiUrl = '${environment.apiUrl}/auth';
+  private apiUrl = `${environment.apiUrl}/auth`;
   
   private httpOptions = {
     headers: new HttpHeaders({

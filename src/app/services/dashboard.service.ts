@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 export interface GroupeSanguin {
   groupe: string;
@@ -99,7 +100,7 @@ interface ProduitSanguin {
 export class DashboardService {
   
   //private apiUrl = 'http://localhost:8080/api';
-  private apiUrl = '${environment.apiUrl}';
+  private apiUrl = `${environment.apiUrl}`;
   
   private defaultProduitStats: ProduitStats = {
     total: 0,

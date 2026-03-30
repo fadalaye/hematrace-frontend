@@ -4,12 +4,13 @@ import { Observable } from 'rxjs';
 import { ProduitSanguin } from '../interfaces/produit-sanguin.interface';
 import { map, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
     providedIn: 'root'
 })
 export class ProduitSanguinService {
-    private apiUrl = '${environment.apiUrl}/produits-sanguins';
+    private apiUrl = `${environment.apiUrl}/produits-sanguins`;
 
     private httpOptions = {
         headers: new HttpHeaders({

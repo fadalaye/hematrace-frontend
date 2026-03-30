@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { saveAs } from 'file-saver';
+import { environment } from '../../environments/environment';
 
 export interface TraceElement {
   id: number;
@@ -69,7 +70,7 @@ export interface PatientInfo {
 })
 export class TracabiliteService {
   //private apiUrl = 'http://localhost:8080/api/tracabilite';
-  private apiUrl = '${environment.apiUrl}/tracabilite';
+  private apiUrl = `${environment.apiUrl}/tracabilite`;
   private storageKey = 'tracabilite_search_history';
 
   constructor(private http: HttpClient) {}

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { catchError, Observable, tap, throwError } from 'rxjs';
 import { IncidentTransfusionnel } from '../interfaces/incident-transfusionnel.interface';
+import { environment } from '../../environments/environment';
 
 export interface CreerIncidentRequest {
     // CHANGEMENT : Utiliser transfusionId directement, pas d'objet transfusion
@@ -47,7 +48,7 @@ export interface CreerIncidentRequest {
     providedIn: 'root'
     })
     export class IncidentTransfusionnelService {
-    private apiUrl = '${environment.apiUrl}/incidents-transfusionnels';
+    private apiUrl = `${environment.apiUrl}/incidents-transfusionnels`;
 
     private httpOptions = {
         headers: new HttpHeaders({

@@ -10,13 +10,14 @@ import {
 } from '../interfaces/transfusion.interface';
 import { IncidentTransfusionnel } from '../interfaces/incident-transfusionnel.interface';
 import { Surveillance } from '../interfaces/surveillance.interface';
+import { environment } from '../../environments/environment';
 
 @Injectable({
     providedIn: 'root'
 })
 export class TransfusionService {
     //private apiUrl = 'http://localhost:8080/api/transfusions';
-    private apiUrl = '${environment.apiUrl}/transfusions';
+    private apiUrl = `${environment.apiUrl}/transfusions`;
 
     private httpOptions = {
         headers: new HttpHeaders({

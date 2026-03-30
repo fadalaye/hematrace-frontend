@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { Delivrance } from '../interfaces/delivrance.interface';
+import { environment } from '../../environments/environment';
 
 // Interfaces pour les réponses API
 export interface ApiResponse<T> {
@@ -65,7 +66,7 @@ interface DelivranceDetailsApiResponse {
   providedIn: 'root'
 })
 export class DelivranceService {
-  private apiUrl = '${environment.apiUrl}/delivrances';
+  private apiUrl = `${environment.apiUrl}/delivrances`;
 
   private httpOptions = {
     headers: new HttpHeaders({
