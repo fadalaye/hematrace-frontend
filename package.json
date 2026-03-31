@@ -28,6 +28,8 @@
     "chart.js": "^4.5.1",
     "escape-string-regexp": "^5.0.0",
     "file-saver": "^2.0.5",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "lodash.isequal": "^4.5.0",
     "ngx-bootstrap": "^19.0.0",
     "ngx-select-ex": "^19.0.7",

@@ -1,0 +1,39 @@
+<div class="container-fluid mt-3">
+  <div class="card bg-light mb-4">
+    <div class="card-body py-3">
+      <h4 class="mb-1">
+        <mat-icon class="me-2 text-primary">bar_chart</mat-icon>
+        Rapports & statistiques
+      </h4>
+      <small class="text-muted">
+        Choisissez le type de rapport que vous souhaitez consulter.
+      </small>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    @for (card of cards; track card.title) {
+      <div class="col-md-4">
+        <mat-card class="rapport-card h-100">
+          <mat-card-content>
+            <div class="d-flex align-items-center mb-3">
+              <mat-icon class="rapport-icon me-2">{{ card.icon }}</mat-icon>
+              <h5 class="mb-0">{{ card.title }}</h5>
+            </div>
+
+            <p class="text-muted">
+              {{ card.description }}
+            </p>
+
+            <button
+              mat-raised-button
+              color="primary"
+              [routerLink]="card.route">
+              Ouvrir
+            </button>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    }
+  </div>
+</div>

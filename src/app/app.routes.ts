@@ -200,9 +200,52 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/hematrace-layout/header/header-options-list/profil/profil.component')
             .then((c) => c.ProfilComponent)
+      },
+        // Rapports
+      {
+        path: 'rapports',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./pages/main-app/rapports/rapports.component')
+                .then((c) => c.RapportsComponent),
+            data: {
+              permissions: ['REPORT_VIEW']
+            }
+          },
+          {
+            path: 'demandes',
+            loadComponent: () =>
+              import('./pages/main-app/rapports/rapport-demandes/rapport-demandes.component')
+                .then((c) => c.RapportDemandesComponent),
+            data: {
+              permissions: ['REPORT_VIEW']
+            }
+          },
+          {
+            path: 'produits',
+            loadComponent: () =>
+              import('./pages/main-app/rapports/rapport-produits/rapport-produits.component')
+                .then((c) => c.RapportProduitsComponent),
+            data: {
+              permissions: ['REPORT_VIEW']
+            }
+          },
+          {
+            path: 'incidents',
+            loadComponent: () =>
+              import('./pages/main-app/rapports/rapport-incidents/rapport-incidents.component')
+                .then((c) => c.RapportIncidentsComponent),
+            data: {
+              permissions: ['REPORT_VIEW']
+            }
+          }
+        ]
       }
     ],
   },
+
   
   // Route 404
   {
