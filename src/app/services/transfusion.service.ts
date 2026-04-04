@@ -11,6 +11,7 @@ import {
 import { IncidentTransfusionnel } from '../interfaces/incident-transfusionnel.interface';
 import { Surveillance } from '../interfaces/surveillance.interface';
 import { environment } from '../../environments/environment';
+import { CorrectionCliniqueTransfusionRequest } from '../interfaces/CorrectionCliniqueTransfusionRequest.interface';
 
 @Injectable({
     providedIn: 'root'
@@ -303,5 +304,17 @@ hasIncident(transfusionId: number): Observable<boolean> {
  */
 getTransfusionsCompatibles(): Observable<Transfusion[]> {
     return this.http.get<Transfusion[]>(`${this.apiUrl}/compatibles-incident`);
+}
+
+
+corrigerCliniquement(
+  id: number,
+  request: CorrectionCliniqueTransfusionRequest
+): Observable<Transfusion> {
+  return this.http.put<Transfusion>(
+    `${this.apiUrl}/${id}/correction-clinique`,
+    request,
+    this.httpOptions
+  );
 }
 }

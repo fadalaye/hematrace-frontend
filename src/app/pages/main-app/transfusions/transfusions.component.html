@@ -1,5 +1,4 @@
 <div class="container-fluid mt-3">
-  <!-- En-tête avec statistiques -->
   <div class="row mb-4">
     <div class="col-12">
       <div class="card bg-light">
@@ -15,31 +14,33 @@
               </small>
             </div>
             <div class="col-md-6 text-end">
-              <button mat-stroked-button 
-                      color="primary" 
-                      (click)="refreshData()"
-                      [disabled]="loadingIndicator()"
-                      class="me-2">
+              <button
+                mat-stroked-button
+                color="primary"
+                (click)="refreshData()"
+                [disabled]="loadingIndicator()"
+                class="me-2">
                 <mat-icon>refresh</mat-icon>
                 Rafraîchir
               </button>
-              
-              <!-- Bouton Nouvelle Transfusion - MÉDECIN et Super Users -->
-              <button mat-raised-button 
-                      color="primary" 
-                      (click)="openCreateForm()"
-                      class="me-2"
-                      [disabled]="loadingIndicator()"
-                      *ngIf="authService.canCreateTransfusion()">
-                <mat-icon>add</mat-icon> 
+
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="openCreateForm()"
+                class="me-2"
+                [disabled]="loadingIndicator()"
+                *ngIf="authService.canCreateTransfusion()">
+                <mat-icon>add</mat-icon>
                 Nouvelle Transfusion
               </button>
-              
-              <button mat-stroked-button 
-                      color="accent" 
-                      (click)="exportToExcel()"
-                      [disabled]="loadingIndicator() || getFilteredCount() === 0">
-                <mat-icon>download</mat-icon> 
+
+              <button
+                mat-stroked-button
+                color="accent"
+                (click)="exportToExcel()"
+                [disabled]="loadingIndicator() || getFilteredCount() === 0">
+                <mat-icon>download</mat-icon>
                 Exporter Excel
               </button>
             </div>
@@ -49,93 +50,239 @@
     </div>
   </div>
 
-  <!-- Barre d'actions et info filtres -->
+  <!-- KPI -->
+  <div class="row g-3 mb-4" *ngIf="!loadingIndicator()">
+    <div class="col-md-3 col-lg-2 col-sm-6">
+      <div class="card kpi-card kpi-primary">
+        <div class="card-body">
+          <div class="kpi-label">Total</div>
+          <div class="kpi-value">{{ getFilteredCount() }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-lg-2 col-sm-6">
+      <div class="card kpi-card kpi-success">
+        <div class="card-body">
+          <div class="kpi-label">Bonne</div>
+          <div class="kpi-value">{{ getBonneToleranceCount() }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-lg-2 col-sm-6">
+      <div class="card kpi-card kpi-warning">
+        <div class="card-body">
+          <div class="kpi-label">Moyenne</div>
+          <div class="kpi-value">{{ getToleranceMoyenneCount() }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-lg-2 col-sm-6">
+      <div class="card kpi-card kpi-danger">
+        <div class="card-body">
+          <div class="kpi-label">Mauvaise</div>
+          <div class="kpi-value">{{ getMauvaiseToleranceCount() }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-lg-2 col-sm-6">
+      <div class="card kpi-card kpi-incident">
+        <div class="card-body">
+          <div class="kpi-label">Avec effets</div>
+          <div class="kpi-value">{{ getAvecEffetsCount() }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-lg-2 col-sm-6">
+      <div class="card kpi-card kpi-info">
+        <div class="card-body">
+          <div class="kpi-label">Sans effets</div>
+          <div class="kpi-value">{{ getSansEffetsCount() }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-lg-2 col-sm-6">
+      <div class="card kpi-card kpi-secondary">
+        <div class="card-body">
+          <div class="kpi-label">Surveillances</div>
+          <div class="kpi-value">{{ getSurveillancesCount() }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-lg-2 col-sm-6">
+      <div class="card kpi-card kpi-dark">
+        <div class="card-body">
+          <div class="kpi-label">7 derniers jours</div>
+          <div class="kpi-value">{{ getDernieresTransfusionsCount() }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtres avancés -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Filtrer par tolérance</mat-label>
+            <mat-select (selectionChange)="onToleranceFilterChange($event)" [value]="selectedTolerance()">
+              @for (option of toleranceOptions; track option.value) {
+                <mat-option [value]="option.value">
+                  <mat-icon class="me-2">{{ option.icon }}</mat-icon>
+                  {{ option.label }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Filtrer par effets</mat-label>
+            <mat-select (selectionChange)="onEffetsFilterChange($event)" [value]="selectedEffetsIndesirables()">
+              @for (option of effetsOptions; track option.value) {
+                <mat-option [value]="option.value">
+                  <mat-icon class="me-2">{{ option.icon }}</mat-icon>
+                  {{ option.label }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Groupe sanguin</mat-label>
+            <mat-select (selectionChange)="onGroupeFilterChange($event)" [value]="selectedGroupeSanguin()">
+              <mat-option value="TOUS">Tous</mat-option>
+              @for (groupe of getGroupesSanguinsDisponibles(); track groupe) {
+                <mat-option [value]="groupe">{{ groupe }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Médecin</mat-label>
+            <mat-select (selectionChange)="onMedecinFilterChange($event)" [value]="selectedMedecin()">
+              <mat-option value="TOUS">Tous</mat-option>
+              @for (medecin of getMedecinsDisponibles(); track medecin) {
+                <mat-option [value]="medecin">{{ medecin }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>État patient après</mat-label>
+            <mat-select (selectionChange)="onEtatPatientFilterChange($event)" [value]="selectedEtatPatientApres()">
+              <mat-option value="TOUS">Tous</mat-option>
+              @for (etat of getEtatsPatientDisponibles(); track etat) {
+                <mat-option [value]="etat">{{ etat }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Date début</mat-label>
+            <input matInput type="date" [value]="dateDebut()" (change)="onDateDebutChange($event)">
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Date fin</mat-label>
+            <input matInput type="date" [value]="dateFin()" (change)="onDateFinChange($event)">
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Rechercher une transfusion...</mat-label>
+            <input
+              matInput
+              (input)="onFilterChange($event)"
+              placeholder="Patient, dossier, médecin, produit..."
+              [disabled]="loadingIndicator()">
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Barre actions -->
   <div class="row mb-3">
     <div class="col-md-12">
-      <div class="d-flex justify-content-between align-items-center">
-        <!-- Boutons d'actions -->
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
-          <button mat-stroked-button 
-                  color="accent" 
-                  (click)="getStatistics()"
-                  [disabled]="loadingIndicator() || getTotalCount() === 0"
-                  class="me-2">
+          <button
+            mat-stroked-button
+            color="accent"
+            (click)="getStatistics()"
+            [disabled]="loadingIndicator() || getTotalCount() === 0"
+            class="me-2">
             <mat-icon>analytics</mat-icon>
             Statistiques
           </button>
         </div>
-        
-        <!-- Info filtres actifs -->
-        @if (hasActiveFilters()) {
-          <div class="alert alert-info py-2 mb-0 d-flex align-items-center">
-            <mat-icon class="me-1">filter_alt</mat-icon>
-            Filtres actifs: 
-            <span class="badge bg-primary ms-2" 
-                  (click)="resetFilters()" 
-                  style="cursor: pointer;">
-              {{ getFilteredCount() }} résultat(s)
-              <mat-icon class="ms-1" style="font-size: 14px;">close</mat-icon>
-            </span>
-          </div>
-        }
-      </div>
-    </div>
-  </div>
 
-  <!-- Filtres -->
-  <div class="row mb-3">
-    <div class="col-md-3">
-      <mat-form-field appearance="outline" class="w-100">
-        <mat-label>Filtrer par tolérance</mat-label>
-        <mat-select (selectionChange)="onToleranceFilterChange($event)" 
-                   [value]="selectedTolerance()">
-          @for (option of toleranceOptions; track option.value) {
-            <mat-option [value]="option.value">
-              <mat-icon class="me-2">{{ option.icon }}</mat-icon>
-              {{ option.label }}
-            </mat-option>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          @if (hasActiveFilters()) {
+            <div class="alert alert-info py-2 mb-0 d-flex align-items-center">
+              <mat-icon class="me-1">filter_alt</mat-icon>
+              Filtres actifs :
+              <span class="badge bg-primary ms-2" (click)="resetFilters()" style="cursor: pointer;">
+                {{ getFilteredCount() }} résultat(s)
+                <mat-icon class="ms-1" style="font-size: 14px;">close</mat-icon>
+              </span>
+            </div>
           }
-        </mat-select>
-      </mat-form-field>
-    </div>
-    
-    <div class="col-md-3">
-      <mat-form-field appearance="outline" class="w-100">
-        <mat-label>Filtrer par effets</mat-label>
-        <mat-select (selectionChange)="onEffetsFilterChange($event)" 
-                   [value]="selectedEffetsIndesirables()">
-          @for (option of effetsOptions; track option.value) {
-            <mat-option [value]="option.value">
-              <mat-icon class="me-2">{{ option.icon }}</mat-icon>
-              {{ option.label }}
-            </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-    </div>
-    
-    <div class="col-md-4">
-      <mat-form-field appearance="outline" class="w-100">
-        <mat-label>Rechercher une transfusion...</mat-label>
-        <input matInput 
-               (input)="onFilterChange($event)" 
-               placeholder="Patient, dossier, médecin, produit..." 
-               [disabled]="loadingIndicator()">
-        <mat-icon matSuffix>search</mat-icon>
-      </mat-form-field>
-    </div>
-    
-    <div class="col-md-2">
-      <div class="d-flex h-100 align-items-center justify-content-end">
-        <div class="text-muted small">
-          <mat-icon class="me-1" style="font-size: 16px;">filter_list</mat-icon>
-          {{ getFilteredCount() }} résultat(s)
+
+          <div class="btn-group" role="group">
+            <button
+              type="button"
+              class="btn"
+              [ngClass]="getViewMode() === 'table' ? 'btn-primary' : 'btn-outline-primary'"
+              (click)="setViewMode('table')">
+              <mat-icon class="me-1">table_rows</mat-icon>
+              Tableau
+            </button>
+
+            <button
+              type="button"
+              class="btn"
+              [ngClass]="getViewMode() === 'cards' ? 'btn-primary' : 'btn-outline-primary'"
+              (click)="setViewMode('cards')">
+              <mat-icon class="me-1">view_module</mat-icon>
+              Cartes
+            </button>
+
+            <button
+              type="button"
+              class="btn"
+              [ngClass]="getViewMode() === 'timeline' ? 'btn-primary' : 'btn-outline-primary'"
+              (click)="setViewMode('timeline')">
+              <mat-icon class="me-1">timeline</mat-icon>
+              Timeline
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Indicateur de chargement -->
   @if (loadingIndicator()) {
     <div class="text-center py-5">
       <div class="mb-3">
@@ -145,7 +292,6 @@
     </div>
   }
 
-  <!-- Indicateur d'export -->
   @if (exportingIndicator()) {
     <div class="position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 1060;">
       <div class="alert alert-info d-flex align-items-center shadow">
@@ -155,38 +301,29 @@
     </div>
   }
 
-  <!-- Tableau des transfusions -->
-  @if (!loadingIndicator()) {
+  <!-- Vue tableau -->
+  @if (!loadingIndicator() && getViewMode() === 'table') {
     <div class="card">
       <div class="card-body p-0">
         <div class="table-responsive">
           <table mat-table [dataSource]="dataSource" matSort class="w-100">
-            
-            <!-- Colonne Nom Patient -->
+
             <ng-container matColumnDef="patientNom">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header class="ps-3">
-                Nom Patient
-              </th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="ps-3">Nom Patient</th>
               <td mat-cell *matCellDef="let transfusion" class="ps-3">
                 <strong>{{ transfusion.patientNom }}</strong>
               </td>
             </ng-container>
 
-            <!-- Colonne Prénom Patient -->
             <ng-container matColumnDef="patientPrenom">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>
-                Prénom Patient
-              </th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Prénom Patient</th>
               <td mat-cell *matCellDef="let transfusion">
                 {{ transfusion.patientPrenom }}
               </td>
             </ng-container>
 
-            <!-- Colonne Groupe Sanguin -->
             <ng-container matColumnDef="groupeSanguinPatient">
-              <th mat-header-cell *matHeaderCellDef>
-                Groupe Sanguin
-              </th>
+              <th mat-header-cell *matHeaderCellDef>Groupe Sanguin</th>
               <td mat-cell *matCellDef="let transfusion">
                 <div class="d-flex align-items-center">
                   <mat-icon class="me-2 text-danger" style="font-size: 18px;">bloodtype</mat-icon>
@@ -195,11 +332,8 @@
               </td>
             </ng-container>
 
-            <!-- Colonne Produit Sanguin -->
             <ng-container matColumnDef="produitSanguin">
-              <th mat-header-cell *matHeaderCellDef>
-                Produit Sanguin
-              </th>
+              <th mat-header-cell *matHeaderCellDef>Produit Sanguin</th>
               <td mat-cell *matCellDef="let transfusion">
                 @if (transfusion.produitSanguin) {
                   <div class="d-flex flex-column">
@@ -212,15 +346,12 @@
               </td>
             </ng-container>
 
-            <!-- Colonne Médecin -->
             <ng-container matColumnDef="medecin">
-              <th mat-header-cell *matHeaderCellDef>
-                Médecin
-              </th>
+              <th mat-header-cell *matHeaderCellDef>Médecin</th>
               <td mat-cell *matCellDef="let transfusion">
                 @if (transfusion.medecin) {
                   <div class="d-flex flex-column">
-                    <strong>Dr {{ transfusion.medecin.prenom }} {{ transfusion.medecin.nom }}</strong>
+                    <strong>{{ getMedecinDisplay(transfusion) }}</strong>
                     <small class="text-muted">{{ transfusion.medecin.specialite }}</small>
                   </div>
                 } @else {
@@ -229,11 +360,8 @@
               </td>
             </ng-container>
 
-            <!-- Colonne Tolérance -->
             <ng-container matColumnDef="tolerance">
-              <th mat-header-cell *matHeaderCellDef>
-                Tolérance
-              </th>
+              <th mat-header-cell *matHeaderCellDef>Tolérance</th>
               <td mat-cell *matCellDef="let transfusion">
                 <span [class]="getToleranceBadgeClass(transfusion.tolerance)" class="badge">
                   <mat-icon class="me-1" style="font-size: 14px;">
@@ -244,26 +372,20 @@
               </td>
             </ng-container>
 
-            <!-- Colonne Effets Indésirables -->
             <ng-container matColumnDef="effetsIndesirables">
-              <th mat-header-cell *matHeaderCellDef>
-                Effets Indés.
-              </th>
+              <th mat-header-cell *matHeaderCellDef>Effets Indés.</th>
               <td mat-cell *matCellDef="let transfusion">
-                <span [class]="getEffetsBadgeClass(transfusion.effetsIndesirables)" class="badge">
+                <span [class]="getEffetsBadgeClass(!!transfusion.effetsIndesirables)" class="badge">
                   <mat-icon class="me-1" style="font-size: 14px;">
-                    {{ getEffetsIcon(transfusion.effetsIndesirables) }}
+                    {{ getEffetsIcon(!!transfusion.effetsIndesirables) }}
                   </mat-icon>
-                  {{ getEffetsText(transfusion.effetsIndesirables) }}
+                  {{ getEffetsText(!!transfusion.effetsIndesirables) }}
                 </span>
               </td>
             </ng-container>
 
-            <!-- Colonne État Patient Après -->
             <ng-container matColumnDef="etatPatientApres">
-              <th mat-header-cell *matHeaderCellDef>
-                État Après
-              </th>
+              <th mat-header-cell *matHeaderCellDef>État Après</th>
               <td mat-cell *matCellDef="let transfusion">
                 <span class="badge bg-info">
                   {{ transfusion.etatPatientApres }}
@@ -271,11 +393,8 @@
               </td>
             </ng-container>
 
-            <!-- Colonne Déclarant -->
             <ng-container matColumnDef="declarant">
-              <th mat-header-cell *matHeaderCellDef>
-                Déclarant
-              </th>
+              <th mat-header-cell *matHeaderCellDef>Déclarant</th>
               <td mat-cell *matCellDef="let transfusion">
                 <div class="d-flex flex-column">
                   <strong>{{ transfusion.prenomDeclarant }} {{ transfusion.nomDeclarant }}</strong>
@@ -284,90 +403,71 @@
               </td>
             </ng-container>
 
-            <!-- Colonne Info -->
             <ng-container matColumnDef="info">
-              <th mat-header-cell *matHeaderCellDef class="text-center">
-                Détails
-              </th>
+              <th mat-header-cell *matHeaderCellDef class="text-center">Détails</th>
               <td mat-cell *matCellDef="let transfusion" class="text-center">
-                <button mat-icon-button 
-                        color="info" 
-                        matTooltip="Voir les détails complets"
-                        (click)="openInfoModal(infoModalTemplate, transfusion)">
+                <button
+                  mat-icon-button
+                  color="primary"
+                  matTooltip="Voir les détails complets"
+                  (click)="openInfoModal(infoModalTemplate, transfusion)">
                   <mat-icon>info</mat-icon>
                 </button>
               </td>
             </ng-container>
 
-            <!-- Colonne Actions -->
             <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef class="text-end pe-3">
-                Actions
-              </th>
+              <th mat-header-cell *matHeaderCellDef class="text-end pe-3">Actions</th>
               <td mat-cell *matCellDef="let transfusion" class="text-end pe-3">
                 <div class="btn-group" role="group">
-                  <!-- Bouton Modifier - MÉDECIN et Super Users -->
                   @if (authService.canUpdateTransfusion()) {
-                    <button mat-icon-button 
-                            color="primary" 
-                            matTooltip="Modifier"
-                            (click)="openEditForm(transfusion)"
-                            [disabled]="savingIndicator()"
-                            class="me-1">
+                    <button
+                      mat-icon-button
+                      color="primary"
+                      matTooltip="Modifier"
+                      (click)="openEditForm(transfusion)"
+                      [disabled]="savingIndicator()"
+                      class="me-1">
                       <mat-icon>edit</mat-icon>
                     </button>
                   }
-                  
-                  <!-- Bouton Visualiser - Tous peuvent visualiser -->
-                  <button mat-icon-button 
-                          color="info" 
-                          matTooltip="Visualiser"
-                          (click)="openViewForm(transfusion)"
-                          [disabled]="savingIndicator()"
-                          class="me-1">
+
+                  <button
+                    mat-icon-button
+                    color="primary"
+                    matTooltip="Visualiser"
+                    (click)="openViewForm(transfusion)"
+                    [disabled]="savingIndicator()"
+                    class="me-1">
                     <mat-icon>visibility</mat-icon>
                   </button>
-                  
-                  <!-- Bouton Supprimer - Seulement Super Users -->
+
                   @if (authService.canDeleteTransfusion()) {
-                    <button mat-icon-button 
-                            color="warn" 
-                            matTooltip="Supprimer"
-                            (click)="deleteTransfusion(transfusion)"
-                            [disabled]="savingIndicator()">
+                    <button
+                      mat-icon-button
+                      color="warn"
+                      matTooltip="Supprimer"
+                      (click)="deleteTransfusion(transfusion)"
+                      [disabled]="savingIndicator()">
                       <mat-icon>delete</mat-icon>
                     </button>
-                  }
-                  
-                  <!-- Message si pas de droits pour les actions -->
-                  @if (!authService.canUpdateTransfusion() && 
-                       !authService.canDeleteTransfusion()) {
-                    <span class="text-muted small">
-                      <mat-icon class="me-1" style="font-size: 16px;">visibility</mat-icon>
-                      Consultation seulement
-                    </span>
                   }
                 </div>
               </td>
             </ng-container>
 
-            <!-- En-tête et lignes -->
             <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-light"></tr>
-            <tr mat-row 
-                *matRowDef="let row; columns: displayedColumns;" 
-                class="hover-row">
-            </tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover-row"></tr>
           </table>
         </div>
 
-        <!-- Pagination -->
-        <mat-paginator [pageSize]="10" 
-                      [pageSizeOptions]="[5, 10, 25, 50]" 
-                      showFirstLastButtons
-                      class="border-top">
+        <mat-paginator
+          [pageSize]="10"
+          [pageSizeOptions]="[5, 10, 25, 50]"
+          showFirstLastButtons
+          class="border-top">
         </mat-paginator>
 
-        <!-- Message si aucun résultat -->
         @if (getFilteredCount() === 0 && !loadingIndicator()) {
           <div class="text-center py-5 text-muted">
             <mat-icon class="display-1 text-muted mb-3">bloodtype</mat-icon>
@@ -375,26 +475,18 @@
             @if (hasActiveFilters()) {
               <p>
                 Aucun résultat pour les filtres actuels.
-                <a href="javascript:void(0)" 
-                  (click)="resetFilters()"
-                  class="text-primary text-decoration-none">
+                <a href="javascript:void(0)" (click)="resetFilters()" class="text-primary text-decoration-none">
                   Réinitialiser les filtres
                 </a>
               </p>
             }
             @if (!hasActiveFilters()) {
               <p>
-                Aucune transfusion enregistrée. 
+                Aucune transfusion enregistrée.
                 @if (authService.canCreateTransfusion()) {
-                  <a href="javascript:void(0)" 
-                    (click)="openCreateForm()"
-                    class="text-primary text-decoration-none">
+                  <a href="javascript:void(0)" (click)="openCreateForm()" class="text-primary text-decoration-none">
                     Enregistrer la première transfusion
                   </a>
-                } @else {
-                  <span class="text-warning">
-                    Contactez un médecin pour enregistrer une transfusion
-                  </span>
                 }
               </p>
             }
@@ -404,7 +496,230 @@
     </div>
   }
 
-  <!-- Indicateur de sauvegarde -->
+  <!-- Vue cartes -->
+  <div *ngIf="!loadingIndicator() && getViewMode() === 'cards'" class="card">
+    <div class="card-body">
+      <div *ngIf="getFilteredCount() > 0; else noCardResult" class="row g-4">
+        <div class="col-12 col-md-6 col-xl-4" *ngFor="let transfusion of filteredTransfusions()">
+          <div class="transfusion-card h-100" [ngClass]="getCardBorderClass(transfusion)">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div>
+                <div class="small text-muted">Patient</div>
+                <div class="fw-bold">{{ transfusion.patientPrenom }} {{ transfusion.patientNom }}</div>
+                <div class="small text-muted">Dossier: {{ transfusion.patientNumDossier || 'N/A' }}</div>
+              </div>
+
+              <span [class]="getToleranceBadgeClass(transfusion.tolerance)" class="badge">
+                <mat-icon class="me-1 mini-icon">{{ getToleranceIcon(transfusion.tolerance) }}</mat-icon>
+                {{ transfusion.tolerance }}
+              </span>
+            </div>
+
+            <div class="mb-3 d-flex gap-2 flex-wrap">
+              <span class="badge bg-danger">{{ transfusion.groupeSanguinPatient }}</span>
+              <span class="badge bg-primary">{{ transfusion.produitSanguin?.typeProduit || 'N/A' }}</span>
+              <span [class]="getEffetsBadgeClass(!!transfusion.effetsIndesirables)" class="badge">
+                {{ getEffetsText(!!transfusion.effetsIndesirables) }}
+              </span>
+            </div>
+
+            <div class="transfusion-info-list">
+              <div class="transfusion-info-item">
+                <mat-icon class="info-icon">bloodtype</mat-icon>
+                <div>
+                  <div class="label">Produit</div>
+                  <div class="value">{{ getProduitDisplay(transfusion) }}</div>
+                </div>
+              </div>
+
+              <div class="transfusion-info-item">
+                <mat-icon class="info-icon">person</mat-icon>
+                <div>
+                  <div class="label">Médecin</div>
+                  <div class="value">{{ getMedecinDisplay(transfusion) }}</div>
+                </div>
+              </div>
+
+              <div class="transfusion-info-item">
+                <mat-icon class="info-icon">event</mat-icon>
+                <div>
+                  <div class="label">Date transfusion</div>
+                  <div class="value">{{ formatDateTimeForDisplay(transfusion.dateTransfusion) }}</div>
+                </div>
+              </div>
+
+              <div class="transfusion-info-item">
+                <mat-icon class="info-icon">monitor_heart</mat-icon>
+                <div>
+                  <div class="label">État après</div>
+                  <div class="value">{{ transfusion.etatPatientApres || 'N/A' }}</div>
+                </div>
+              </div>
+
+              <div class="transfusion-info-item">
+                <mat-icon class="info-icon">badge</mat-icon>
+                <div>
+                  <div class="label">Déclarant</div>
+                  <div class="value">{{ transfusion.prenomDeclarant }} {{ transfusion.nomDeclarant }}</div>
+                </div>
+              </div>
+
+              <div class="transfusion-info-item" *ngIf="transfusion.surveillances?.length">
+                <mat-icon class="info-icon">timeline</mat-icon>
+                <div>
+                  <div class="label">Surveillances</div>
+                  <div class="value">
+                    {{ transfusion.surveillances?.length }} mesure(s)
+                    • Pouls moy. {{ getAveragePouls(transfusion.surveillances || []) }}
+                    • Temp. moy. {{ getAverageTemperature(transfusion.surveillances || []) }}°C
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 d-flex justify-content-end gap-2 flex-wrap">
+              <button mat-stroked-button color="primary" (click)="openInfoModal(infoModalTemplate, transfusion)">
+                <mat-icon>info</mat-icon>
+                Détails
+              </button>
+
+              @if (authService.canUpdateTransfusion()) {
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  (click)="openEditForm(transfusion)"
+                  [disabled]="savingIndicator()">
+                  <mat-icon>edit</mat-icon>
+                  Modifier
+                </button>
+              }
+
+              @if (authService.canDeleteTransfusion()) {
+                <button
+                  mat-stroked-button
+                  color="warn"
+                  (click)="deleteTransfusion(transfusion)"
+                  [disabled]="savingIndicator()">
+                  <mat-icon>delete</mat-icon>
+                  Supprimer
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noCardResult>
+        <div class="text-center py-5 text-muted">
+          <mat-icon class="display-1 text-muted mb-3">bloodtype</mat-icon>
+          <h5>Aucune transfusion trouvée</h5>
+          <p>Aucun résultat pour les filtres actuels.</p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Vue timeline -->
+  <div *ngIf="!loadingIndicator() && getViewMode() === 'timeline'" class="card">
+    <div class="card-body">
+      <div *ngIf="getFilteredCount() > 0; else noTimelineResult" class="timeline-wrapper">
+        <div class="timeline-item" *ngFor="let transfusion of filteredTransfusions()">
+          <div class="timeline-marker" [ngClass]="getTimelineClass(transfusion)"></div>
+
+          <div class="timeline-content">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+              <div>
+                <div class="fw-bold text-primary">
+                  {{ transfusion.patientPrenom }} {{ transfusion.patientNom }}
+                </div>
+                <div class="small text-muted">
+                  {{ getTimelineDateLabel(transfusion) }}
+                </div>
+              </div>
+
+              <div class="d-flex gap-2 flex-wrap">
+                <span class="badge bg-danger">{{ transfusion.groupeSanguinPatient }}</span>
+                <span [class]="getToleranceBadgeClass(transfusion.tolerance)" class="badge">
+                  {{ transfusion.tolerance }}
+                </span>
+                <span [class]="getEffetsBadgeClass(!!transfusion.effetsIndesirables)" class="badge">
+                  {{ getEffetsText(!!transfusion.effetsIndesirables) }}
+                </span>
+              </div>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-4">
+                <strong>Produit :</strong><br>
+                {{ getProduitDisplay(transfusion) }}
+              </div>
+
+              <div class="col-md-4">
+                <strong>Médecin :</strong><br>
+                {{ getMedecinDisplay(transfusion) }}
+              </div>
+
+              <div class="col-md-4">
+                <strong>Déclarant :</strong><br>
+                {{ transfusion.prenomDeclarant }} {{ transfusion.nomDeclarant }}
+                <br>
+                <small class="text-muted">{{ transfusion.fonctionDeclarant }}</small>
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <strong>État patient après :</strong>
+              <div class="mt-1">{{ transfusion.etatPatientApres || 'N/A' }}</div>
+            </div>
+
+            <div class="mt-3" *ngIf="transfusion.surveillances?.length">
+              <strong>Surveillance :</strong>
+              <div class="mt-1">
+                {{ transfusion.surveillances?.length }} mesure(s) |
+                Pouls moyen : {{ getAveragePouls(transfusion.surveillances || []) }} |
+                Température moyenne : {{ getAverageTemperature(transfusion.surveillances || []) }}°C
+              </div>
+            </div>
+
+            <div class="mt-3" *ngIf="transfusion.effetsIndesirables">
+              <strong class="text-warning">Effet indésirable :</strong>
+              <div class="mt-1">
+                {{ transfusion.typeEffet || 'Non précisé' }}
+                <span *ngIf="transfusion.graviteEffet"> - Gravité : {{ transfusion.graviteEffet }}</span>
+              </div>
+            </div>
+
+            <div class="mt-3 d-flex justify-content-end gap-2 flex-wrap">
+              <button mat-stroked-button color="primary" (click)="openInfoModal(infoModalTemplate, transfusion)">
+                <mat-icon>info</mat-icon>
+                Détails
+              </button>
+
+              @if (authService.canUpdateTransfusion()) {
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  (click)="openEditForm(transfusion)"
+                  [disabled]="savingIndicator()">
+                  <mat-icon>edit</mat-icon>
+                  Modifier
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noTimelineResult>
+        <div class="text-center py-5 text-muted">
+          <mat-icon class="display-1 text-muted mb-3">timeline</mat-icon>
+          <h5>Aucune transfusion trouvée</h5>
+          <p>Aucun résultat pour les filtres actuels.</p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
   @if (savingIndicator()) {
     <div class="position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 1060;">
       <div class="alert alert-info d-flex align-items-center shadow">
@@ -415,7 +730,7 @@
   }
 </div>
 
-<!-- Template de la modale d'information -->
+<!-- Modale détails / visualiser -->
 <ng-template #infoModalTemplate>
   <div class="modal-header bg-info text-white">
     <h5 class="modal-title">
@@ -424,12 +739,12 @@
     </h5>
     <button type="button" class="btn-close btn-close-white" (click)="closeTransfusionModal()"></button>
   </div>
+
   <div class="modal-body">
     @if (selectedTransfusion()) {
       @let transfusion = selectedTransfusion()!;
-      
+
       <div class="row">
-        <!-- Informations Patient -->
         <div class="col-md-6">
           <div class="card mb-4">
             <div class="card-header bg-light">
@@ -452,7 +767,7 @@
               <div class="row mt-2">
                 <div class="col-6">
                   <strong>Date de naissance:</strong><br>
-                  {{ transfusion.patientDateNaissance }}
+                  {{ formatDateForDisplay(transfusion.patientDateNaissance) }}
                 </div>
                 <div class="col-6">
                   <strong>N° Dossier:</strong><br>
@@ -472,7 +787,6 @@
           </div>
         </div>
 
-        <!-- Informations Transfusion -->
         <div class="col-md-6">
           <div class="card mb-4">
             <div class="card-header bg-light">
@@ -491,351 +805,118 @@
                 </div>
                 <div class="col-6">
                   <strong>Effets indésirables:</strong><br>
-                  <span [class]="getEffetsBadgeClass(transfusion.effetsIndesirables)" class="badge">
-                    {{ getEffetsText(transfusion.effetsIndesirables) }}
+                  <span [class]="getEffetsBadgeClass(!!transfusion.effetsIndesirables)" class="badge">
+                    {{ getEffetsText(!!transfusion.effetsIndesirables) }}
                   </span>
                 </div>
               </div>
+
               <div class="row mt-2">
-                <div class="col-12">
+                <div class="col-6">
+                  <strong>Date transfusion:</strong><br>
+                  {{ formatDateTimeForDisplay(transfusion.dateTransfusion) }}
+                </div>
+                <div class="col-6">
                   <strong>État patient après:</strong><br>
                   <span class="badge bg-info">{{ transfusion.etatPatientApres }}</span>
                 </div>
               </div>
-              @if (transfusion.heureFin) {
-                <div class="row mt-2">
-                  <div class="col-12">
-                    <strong>Heure de fin:</strong><br>
-                    {{ transfusion.heureFin }}
-                  </div>
-                </div>
-              }
-              @if (transfusion.volumeMl) {
-                <div class="row mt-2">
-                  <div class="col-12">
-                    <strong>Volume transfusé:</strong><br>
-                    {{ transfusion.volumeMl }} ml
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Informations Médecin -->
-      <div class="row">
-        <div class="col-md-6">
-          <div class="card mb-4">
-            <div class="card-header bg-light">
-              <h6 class="mb-0">
-                <mat-icon class="me-2 text-primary">medical_services</mat-icon>
-                Médecin Responsable
-              </h6>
-            </div>
-            <div class="card-body">
-              @if (transfusion.medecin) {
-                <div class="d-flex align-items-center">
-                  <div class="me-3">
-                    <mat-icon class="display-4 text-success">medical_services</mat-icon>
-                  </div>
-                  <div>
-                    <h5 class="mb-1">Dr {{ transfusion.medecin.prenom }} {{ transfusion.medecin.nom }}</h5>
-                    @if (transfusion.medecin.specialite) {
-                      <p class="mb-1">
-                        <strong>Spécialité:</strong> {{ transfusion.medecin.specialite }}
-                      </p>
-                    }
-                    @if (transfusion.medecin.matricule) {
-                      <p class="mb-1">
-                        <strong>Matricule:</strong> {{ transfusion.medecin.matricule }}
-                      </p>
-                    }
-                  </div>
+              <div class="row mt-2" *ngIf="transfusion.typeEffet || transfusion.graviteEffet">
+                <div class="col-6">
+                  <strong>Type effet:</strong><br>
+                  {{ transfusion.typeEffet || 'N/A' }}
                 </div>
-              } @else {
-                <div class="text-center text-muted py-3">
-                  <mat-icon class="display-1 mb-3">person_off</mat-icon>
-                  <p>Aucun médecin assigné</p>
+                <div class="col-6">
+                  <strong>Gravité:</strong><br>
+                  {{ transfusion.graviteEffet || 'N/A' }}
                 </div>
-              }
-            </div>
-          </div>
-        </div>
+              </div>
 
-        <!-- Informations Produit Sanguin -->
-        <div class="col-md-6">
-          <div class="card mb-4">
-            <div class="card-header bg-light">
-              <h6 class="mb-0">
-                <mat-icon class="me-2 text-primary">inventory</mat-icon>
-                Produit Sanguin
-              </h6>
-            </div>
-            <div class="card-body">
-              @if (transfusion.produitSanguin) {
-                <div class="d-flex align-items-center">
-                  <div class="me-3">
-                    <mat-icon class="display-4 text-danger">bloodtype</mat-icon>
-                  </div>
-                  <div>
-                    <h5 class="mb-1">{{ transfusion.produitSanguin.codeProduit }}</h5>
-                    <p class="mb-1">
-                      <strong>Type:</strong> {{ transfusion.produitSanguin.typeProduit }}
-                    </p>
-                    <p class="mb-1">
-                      <strong>Groupe sanguin:</strong> 
-                      <span class="badge bg-danger ms-1">
-                        {{ transfusion.produitSanguin.groupeSanguin }}
-                      </span>
-                    </p>
-                    @if (transfusion.produitSanguin.datePeremption) {
-                      <p class="mb-1">
-                        <strong>Date péremption:</strong><br>
-                        {{ formatDate(transfusion.produitSanguin.datePeremption) }}
-                      </p>
-                    }
-                  </div>
-                </div>
-              } @else {
-                <div class="text-center text-muted py-3">
-                  <mat-icon class="display-1 mb-3">inventory_2</mat-icon>
-                  <p>Aucun produit sanguin spécifié</p>
-                </div>
-              }
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Informations Déclarant et Notes -->
-      <div class="row">
-        <div class="col-md-6">
-          <div class="card mb-4">
-            <div class="card-header bg-light">
-              <h6 class="mb-0">
-                <mat-icon class="me-2 text-primary">assignment_ind</mat-icon>
-                Déclarant
-              </h6>
-            </div>
-            <div class="card-body">
-              <div class="d-flex align-items-center">
-                <div class="me-3">
-                  <mat-icon class="display-4 text-primary">person</mat-icon>
-                </div>
-                <div>
-                  <h5 class="mb-1">{{ transfusion.prenomDeclarant }} {{ transfusion.nomDeclarant }}</h5>
-                  <p class="mb-1">
-                    <strong>Fonction:</strong> {{ transfusion.fonctionDeclarant }}
-                  </p>
-                  @if (transfusion.dateDeclaration) {
-                    <p class="mb-1">
-                      <strong>Date déclaration:</strong><br>
-                      {{ transfusion.dateDeclaration }}
-                    </p>
-                  }
+              <div class="row mt-2" *ngIf="transfusion.notes">
+                <div class="col-12">
+                  <strong>Notes:</strong><br>
+                  {{ transfusion.notes }}
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Notes et Informations -->
         <div class="col-md-6">
           <div class="card mb-4">
             <div class="card-header bg-light">
               <h6 class="mb-0">
-                <mat-icon class="me-2 text-primary">note</mat-icon>
-                Notes et Informations
+                <mat-icon class="me-2 text-primary">inventory_2</mat-icon>
+                Produit & Médecin
               </h6>
             </div>
             <div class="card-body">
-              @if (transfusion.notes) {
-                <div class="mb-3">
-                  <h6>Notes médicales:</h6>
-                  <p class="bg-light p-3 rounded">{{ transfusion.notes }}</p>
-                </div>
-              } @else {
-                <div class="text-center text-muted py-3">
-                  <mat-icon class="display-1 mb-3">notes</mat-icon>
-                  <p>Aucune note médicale</p>
-                </div>
-              }
-              
-              <!-- Section Type d'effet indésirable -->
-              @if (transfusion.effetsIndesirables && transfusion.typeEffet) {
-                <div class="alert alert-warning mt-3">
-                  <h6 class="alert-heading">
-                    <mat-icon class="me-1">warning</mat-icon>
-                    Effet indésirable signalé
-                  </h6>
-                  <div class="row">
-                    <div class="col-12 mb-2">
-                      <strong>Type d'effet:</strong><br>
-                      {{ transfusion.typeEffet }}
-                    </div>
-                    @if (transfusion.graviteEffet) {
-                      <div class="col-12">
-                        <strong>Gravité:</strong><br>
-                        <span class="badge bg-danger mt-1">{{ transfusion.graviteEffet }}</span>
-                      </div>
-                    }
-                  </div>
-                </div>
-              }
+              <p><strong>Produit:</strong> {{ getProduitDisplay(transfusion) }}</p>
+              <p><strong>Médecin:</strong> {{ getMedecinDisplay(transfusion) }}</p>
+              <p *ngIf="transfusion.medecin?.specialite">
+                <strong>Spécialité:</strong> {{ transfusion.medecin?.specialite }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h6 class="mb-0">
+                <mat-icon class="me-2 text-primary">badge</mat-icon>
+                Déclarant
+              </h6>
+            </div>
+            <div class="card-body">
+              <p><strong>Nom:</strong> {{ transfusion.prenomDeclarant }} {{ transfusion.nomDeclarant }}</p>
+              <p><strong>Fonction:</strong> {{ transfusion.fonctionDeclarant }}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Section des surveillances -->
-      <div class="row">
-        <div class="col-12">
-          <div class="card mb-3">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center py-1">
-              <h6 class="mb-0" style="font-size: 0.85rem;">
-                <mat-icon class="me-1 text-primary" style="font-size: 16px;">monitor_heart</mat-icon>
-                Surveillance pendant la transfusion
-              </h6>
-              <span class="badge bg-primary" style="font-size: 0.7em; padding: 0.2em 0.4em;">
-                {{ (transfusion.surveillances?.length || 0) }} surveillance(s)
-              </span>
-            </div>
-            
-            <div class="card-body p-2">
-              <!-- Si des surveillances existent -->
-              @if (transfusion.surveillances && transfusion.surveillances.length > 0) {
-                <!-- Liste des surveillances avec accordéon -->
-                <div class="accordion" id="surveillanceAccordion">
-                  @for (surveillance of transfusion.surveillances; track surveillance; let i = $index) {
-                    <div class="accordion-item">
-                      <h2 class="accordion-header">
-                        <button class="accordion-button collapsed py-1 px-2" 
-                                type="button" 
-                                data-bs-toggle="collapse" 
-                                [attr.data-bs-target]="'#surveillance' + i"
-                                style="font-size: 0.8rem;">
-                          <div class="d-flex align-items-center w-100">
-                            <mat-icon class="me-1 text-info" style="font-size: 14px;">schedule</mat-icon>
-                            <strong>Surveillance à {{ surveillance.heure }}</strong>
-                            <div class="ms-auto d-flex gap-1">
-                              <span class="badge bg-info" style="font-size: 0.65em; padding: 0.15em 0.3em;">
-                                P: {{ surveillance.pouls || '-' }}
-                              </span>
-                              <span class="badge bg-warning text-dark" style="font-size: 0.65em; padding: 0.15em 0.3em;">
-                                T: {{ surveillance.temperature || '-' }}
-                              </span>
-                              <span class="badge bg-primary" style="font-size: 0.65em; padding: 0.15em 0.3em;">
-                                TA: {{ surveillance.tension || '-' }}
-                              </span>
-                            </div>
-                          </div>
-                        </button>
-                      </h2>
-                      <div [id]="'surveillance' + i" 
-                          class="accordion-collapse collapse" 
-                          data-bs-parent="#surveillanceAccordion">
-                        <div class="accordion-body py-1 px-2">
-                          <div class="row">
-                            <div class="col-md-6 mb-1">
-                              <h6 class="mb-0" style="font-size: 0.75rem;">Signes cliniques :</h6>
-                              <p class="mb-0" style="font-size: 0.7rem;">{{ surveillance.signesCliniques || 'Aucun' }}</p>
-                            </div>
-                            <div class="col-md-6 mb-1">
-                              <h6 class="mb-0" style="font-size: 0.75rem;">Observations :</h6>
-                              <p class="mb-0" style="font-size: 0.7rem;">{{ surveillance.observations || 'Aucune' }}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  }
-                </div>
-                
-                <!-- Résumé ultra compact -->
-                <div class="mt-2 pt-1 border-top">
-                  <div class="row g-1">
-                    <div class="col-md-4">
-                      <div class="bg-light rounded p-1 text-center">
-                        <div class="text-primary" style="font-size: 0.9rem; font-weight: bold;">
-                          {{ getAveragePouls(transfusion.surveillances) }}
-                        </div>
-                        <div style="font-size: 0.6rem; margin-top: -2px;">Pouls moyen (bpm)</div>
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="bg-light rounded p-1 text-center">
-                        <div class="text-warning" style="font-size: 0.9rem; font-weight: bold;">
-                          {{ getAverageTemperature(transfusion.surveillances) }}
-                        </div>
-                        <div style="font-size: 0.6rem; margin-top: -2px;">Temp. moyenne (°C)</div>
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="bg-light rounded p-1 text-center">
-                        <div class="text-info" style="font-size: 0.9rem; font-weight: bold;">
-                          {{ transfusion.surveillances.length }}
-                        </div>
-                        <div style="font-size: 0.6rem; margin-top: -2px;">Surveillance(s)</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              } @else {
-                <div class="text-center py-1 text-muted">
-                  <mat-icon class="mb-1" style="font-size: 1.5rem;">monitor_heart</mat-icon>
-                  <div style="font-size: 0.75rem;">Aucune surveillance</div>
-                </div>
-              }
-            </div>
+      <div class="card mb-4" *ngIf="transfusion.surveillances?.length">
+        <div class="card-header bg-light">
+          <h6 class="mb-0">
+            <mat-icon class="me-2 text-primary">timeline</mat-icon>
+            Surveillances
+          </h6>
+        </div>
+        <div class="card-body">
+          <p class="mb-3">
+            <strong>Nombre de surveillances :</strong> {{ transfusion.surveillances?.length }} |
+            <strong>Pouls moyen :</strong> {{ getAveragePouls(transfusion.surveillances || []) }} |
+            <strong>Température moyenne :</strong> {{ getAverageTemperature(transfusion.surveillances || []) }}°C
+          </p>
+
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th>Heure</th>
+                  <th>Température</th>
+                  <th>Pouls</th>
+                  <th>Tension</th>
+                  <th>Signes cliniques</th>
+                  <th>Observations</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let s of transfusion.surveillances">
+                  <td>{{ s.heure || 'N/A' }}</td>
+                  <td>{{ s.temperature ?? 'N/A' }}</td>
+                  <td>{{ s.pouls ?? 'N/A' }}</td>
+                  <td>{{ s.tension || 'N/A' }}</td>
+                  <td>{{ s.signesCliniques || 'N/A' }}</td>
+                  <td>{{ s.observations || 'N/A' }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
-    } @else {
-      <div class="text-center py-5 text-muted">
-        <mat-icon class="display-1 mb-3">error</mat-icon>
-        <h5>Aucune transfusion sélectionnée</h5>
-        <p>Veuillez sélectionner une transfusion pour voir les détails.</p>
-      </div>
-    }
-  </div>
-  <div class="modal-footer">
-    <button type="button" 
-            class="btn btn-secondary" 
-            (click)="closeTransfusionModal()">
-      <mat-icon class="me-1">close</mat-icon>
-      Fermer
-    </button>
-    @if (selectedTransfusion()) {
-      <!-- Bouton Modifier - MÉDECIN et Super Users -->
-      @if (authService.canUpdateTransfusion()) {
-        <button type="button" 
-                class="btn btn-primary"
-                (click)="openEditForm(selectedTransfusion()!)">
-          <mat-icon class="me-1">edit</mat-icon>
-          Modifier
-        </button>
-      }
-      
-      <!-- Bouton Visualiser - Tous peuvent visualiser -->
-      <button type="button" 
-              class="btn btn-info"
-              (click)="openViewForm(selectedTransfusion()!)">
-        <mat-icon class="me-1">visibility</mat-icon>
-        Visualiser
-      </button>
-      
-      <!-- Bouton Supprimer - Seulement Super Users -->
-      @if (authService.canDeleteTransfusion()) {
-        <button type="button" 
-                class="btn btn-warning"
-                (click)="deleteTransfusion(selectedTransfusion()!)">
-          <mat-icon class="me-1">delete</mat-icon>
-          Supprimer
-        </button>
-      }
     }
   </div>
 </ng-template>
-
-<router-outlet></router-outlet>

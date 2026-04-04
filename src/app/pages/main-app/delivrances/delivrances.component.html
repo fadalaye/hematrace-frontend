@@ -1,8 +1,8 @@
 <div class="container-fluid mt-3">
-  <!-- En-tête avec statistiques -->
+  <!-- En-tête -->
   <div class="row mb-4">
     <div class="col-12">
-      <div class="card bg-light">
+      <div class="card bg-light border-0 shadow-sm">
         <div class="card-body py-3">
           <div class="row align-items-center">
             <div class="col-md-6">
@@ -11,31 +11,38 @@
                 Gestion des Délivrances
               </h4>
               <small class="text-muted">
-                {{ delivrances()?.length || 0 }} délivrance(s) enregistrée(s)
+                {{ getTotalDelivrancesCount() }} délivrance(s) affichée(s)
               </small>
             </div>
+
             <div class="col-md-6 text-end">
-              <button mat-stroked-button 
-                      color="primary" 
-                      (click)="refreshDelivrances()"
-                      [disabled]="loadingIndicator()"
-                      class="me-2">
+              <button
+                mat-stroked-button
+                color="primary"
+                (click)="refreshDelivrances()"
+                [disabled]="loadingIndicator()"
+                class="me-2">
                 <mat-icon>refresh</mat-icon>
                 Rafraîchir
               </button>
-              <button mat-raised-button color="primary" 
-                      (click)="openDelivranceModal(delivranceModalTemplate)" 
-                      class="me-2"
-                      [disabled]="loadingIndicator() || demandesValidees().length === 0"
-                      *ngIf="authService.canCreateDelivrance()">
-                <mat-icon>add</mat-icon> 
+
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="openDelivranceModal(delivranceModalTemplate)"
+                class="me-2"
+                [disabled]="loadingIndicator() || demandesValidees().length === 0"
+                *ngIf="authService.canCreateDelivrance()">
+                <mat-icon>add</mat-icon>
                 Nouvelle Délivrance
               </button>
 
-              <button mat-stroked-button color="accent" 
-                      (click)="exportToExcel()"
-                      [disabled]="loadingIndicator() || delivrances().length === 0">
-                <mat-icon>download</mat-icon> 
+              <button
+                mat-stroked-button
+                color="primary"
+                (click)="exportToExcel()"
+                [disabled]="loadingIndicator() || getFilteredDelivrances().length === 0">
+                <mat-icon>download</mat-icon>
                 Exporter Excel
               </button>
             </div>
@@ -45,7 +52,164 @@
     </div>
   </div>
 
-  <!-- Indicateur de chargement -->
+  <!-- KPI -->
+  <div class="row g-3 mb-4" *ngIf="!loadingIndicator()">
+    <div class="col-md-2 col-sm-6">
+      <div class="card kpi-card kpi-primary">
+        <div class="card-body">
+          <div class="kpi-label">Total</div>
+          <div class="kpi-value">{{ getTotalDelivrancesCount() }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-2 col-sm-6">
+      <div class="card kpi-card kpi-info">
+        <div class="card-body">
+          <div class="kpi-label">Aujourd’hui</div>
+          <div class="kpi-value">{{ getDelivrancesDuJourCount() }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-2 col-sm-6">
+      <div class="card kpi-card kpi-success">
+        <div class="card-body">
+          <div class="kpi-label">Produits délivrés</div>
+          <div class="kpi-value">{{ getTotalProduitsDelivresCount() }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-2 col-sm-6">
+      <div class="card kpi-card kpi-warning">
+        <div class="card-body">
+          <div class="kpi-label">Transfusion possible</div>
+          <div class="kpi-value">{{ getDelivrancesAvecTransfusionPossibleCount() }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-2 col-sm-6">
+      <div class="card kpi-card kpi-secondary">
+        <div class="card-body">
+          <div class="kpi-label">Destinations</div>
+          <div class="kpi-value">{{ getDestinationsCount() }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-2 col-sm-6">
+      <div class="card kpi-card kpi-danger">
+        <div class="card-body">
+          <div class="kpi-label">Demandes validées</div>
+          <div class="kpi-value">{{ getDemandesValideesEnAttenteCount() }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtres avancés -->
+  <div class="card mb-3" *ngIf="!loadingIndicator()">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Recherche générale</mat-label>
+            <input
+              matInput
+              [value]="selectedSearchTerm()"
+              (input)="onMainSearchChange($event)"
+              placeholder="Patient, service, produit, destination...">
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-2">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Service</mat-label>
+            <mat-select [value]="selectedService()" (selectionChange)="onServiceFilterChange($event)">
+              <mat-option value="TOUS">Tous</mat-option>
+              @for (service of getServicesDisponibles(); track service) {
+                <mat-option [value]="service">{{ service }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-2">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Destination</mat-label>
+            <mat-select [value]="selectedDestination()" (selectionChange)="onDestinationFilterChange($event)">
+              <mat-option value="TOUS">Toutes</mat-option>
+              @for (destination of getDestinationsDisponibles(); track destination) {
+                <mat-option [value]="destination">{{ destination }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-2">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Date début</mat-label>
+            <input matInput type="date" [value]="dateDebut()" (change)="onDateDebutChange($event)">
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-2">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Date fin</mat-label>
+            <input matInput type="date" [value]="dateFin()" (change)="onDateFinChange($event)">
+          </mat-form-field>
+        </div>
+
+        <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div class="text-muted small">
+            <mat-icon class="me-1" style="font-size:16px;">filter_list</mat-icon>
+            {{ getFilteredDelivrances().length }} résultat(s)
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <button mat-stroked-button color="warn" (click)="resetMainFilters()">
+              <mat-icon>refresh</mat-icon>
+              Réinitialiser
+            </button>
+
+            <div class="btn-group" role="group">
+              <button
+                type="button"
+                class="btn"
+                [ngClass]="getViewMode() === 'table' ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="setViewMode('table')">
+                <mat-icon class="me-1">table_rows</mat-icon>
+                Tableau
+              </button>
+
+              <button
+                type="button"
+                class="btn"
+                [ngClass]="getViewMode() === 'cards' ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="setViewMode('cards')">
+                <mat-icon class="me-1">view_module</mat-icon>
+                Cartes
+              </button>
+
+              <button
+                type="button"
+                class="btn"
+                [ngClass]="getViewMode() === 'timeline' ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="setViewMode('timeline')">
+                <mat-icon class="me-1">timeline</mat-icon>
+                Timeline
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chargement -->
   @if (loadingIndicator()) {
     <div class="text-center py-5">
       <div class="mb-3">
@@ -55,14 +219,12 @@
     </div>
   }
 
-  <!-- Tableau des délivrances -->
-  @if (!loadingIndicator()) {
+  <!-- Vue tableau -->
+  @if (!loadingIndicator() && getViewMode() === 'table') {
     <div class="card">
       <div class="card-body p-0">
         <div class="table-responsive">
           <table mat-table [dataSource]="dataSource" matSort class="w-100">
-            
-            <!-- Colonne Informations Demande -->
             <ng-container matColumnDef="demandeInfo">
               <th mat-header-cell *matHeaderCellDef class="ps-3">
                 <mat-icon class="me-2">person</mat-icon>
@@ -74,7 +236,7 @@
                     {{ delivrance.demande?.patientPrenom }} {{ delivrance.demande?.patientNom }}
                   </strong>
                   <small class="text-muted">
-                    {{ delivrance.demande?.serviceDemandeur }} • 
+                    {{ delivrance.demande?.serviceDemandeur }} •
                     {{ delivrance.demande?.typeProduitDemande }}
                   </small>
                   <div class="mt-1">
@@ -87,7 +249,6 @@
               </td>
             </ng-container>
 
-            <!-- Colonne Informations Produits -->
             <ng-container matColumnDef="produitsInfo">
               <th mat-header-cell *matHeaderCellDef>
                 <mat-icon class="me-2">bloodtype</mat-icon>
@@ -112,7 +273,6 @@
               </td>
             </ng-container>
 
-            <!-- Colonne Date Délivrance -->
             <ng-container matColumnDef="dateHeureDelivrance">
               <th mat-header-cell *matHeaderCellDef mat-sort-header>
                 <mat-icon class="me-2">event</mat-icon>
@@ -123,7 +283,6 @@
               </td>
             </ng-container>
 
-            <!-- Colonne Personnel -->
             <ng-container matColumnDef="personnel">
               <th mat-header-cell *matHeaderCellDef>
                 <mat-icon class="me-2">badge</mat-icon>
@@ -145,7 +304,6 @@
               </td>
             </ng-container>
 
-            <!-- Colonne Destination -->
             <ng-container matColumnDef="destination">
               <th mat-header-cell *matHeaderCellDef>
                 <mat-icon class="me-2">place</mat-icon>
@@ -158,103 +316,424 @@
               </td>
             </ng-container>
 
-            <!-- Colonne Actions -->
             <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef class="text-end pe-3">
-                Actions
-              </th>
+              <th mat-header-cell *matHeaderCellDef class="text-end pe-3">Actions</th>
               <td mat-cell *matCellDef="let delivrance" class="text-end pe-3">
-                <!-- Bouton Voir détails - Tous peuvent voir -->
-                <button mat-icon-button 
-                        color="primary" 
-                        matTooltip="Voir détails"
-                        (click)="voirDetailsDelivrance(delivrance)"
-                        class="me-2">
+                <button
+                  mat-icon-button
+                  color="primary"
+                  matTooltip="Voir détails"
+                  (click)="voirDetailsDelivrance(delivrance)"
+                  class="me-2">
                   <mat-icon>visibility</mat-icon>
                 </button>
-                
-                <!-- Bouton Créer transfusion - MÉDECIN et Super Users -->
+
                 @if (authService.canCreateTransfusion()) {
-                  <button mat-icon-button 
-                          color="accent" 
-                          matTooltip="Créer transfusion"
-                          (click)="creerTransfusionDepuisDelivrance(delivrance)"
-                          class="me-2"
-                          [disabled]="!canCreateTransfusionFromDelivrance(delivrance)">
+                  <button
+                    mat-icon-button
+                    color="primary"
+                    matTooltip="Créer transfusion"
+                    (click)="creerTransfusionDepuisDelivrance(delivrance)"
+                    class="me-2"
+                    [disabled]="!canCreateTransfusionFromDelivrance(delivrance)">
                     <mat-icon>bloodtype</mat-icon>
                   </button>
                 }
-                
-                <!-- Bouton Modifier - PERSONNEL (ses propres) et Super Users -->
-                @if (authService.canUpdateDelivrance(delivrance)) {
-                  <button mat-icon-button 
-                          color="warning" 
-                          matTooltip="Modifier"
-                          (click)="modifierDelivrance(delivrance)"
-                          [disabled]="savingIndicator()"
-                          class="me-2">
+
+                @if (canEditDelivrance(delivrance)) {
+                  <button
+                    mat-icon-button
+                    color="primary"
+                    matTooltip="Modifier"
+                    (click)="modifierDelivrance(delivrance)"
+                    [disabled]="savingIndicator()"
+                    class="me-2">
                     <mat-icon>edit</mat-icon>
                   </button>
                 }
-                
-                <!-- Bouton Supprimer - Seulement Super Users -->
+
                 @if (authService.canDeleteDelivrance()) {
-                  <button mat-icon-button 
-                          color="warn" 
-                          matTooltip="Supprimer"
-                          (click)="deleteDelivrance(delivrance)"
-                          [disabled]="savingIndicator()">
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    matTooltip="Supprimer"
+                    (click)="deleteDelivrance(delivrance)"
+                    [disabled]="savingIndicator()">
                     <mat-icon>delete</mat-icon>
                   </button>
-                }
-                
-                <!-- Message si pas de droits pour les actions -->
-                @if (!authService.canUpdateDelivrance(delivrance) && 
-                    !authService.canCreateTransfusion() && 
-                    !authService.canDeleteDelivrance()) {
-                  <span class="text-muted small">
-                    <mat-icon class="me-1" style="font-size: 16px;">visibility</mat-icon>
-                    Consultation seulement
-                  </span>
                 }
               </td>
             </ng-container>
 
-            <!-- En-tête et lignes -->
             <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-light"></tr>
-            <tr mat-row 
-                *matRowDef="let row; columns: displayedColumns;" 
-                class="hover-row"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover-row"></tr>
           </table>
         </div>
 
-        <!-- Pagination -->
-        <mat-paginator [pageSize]="10" 
-                      [pageSizeOptions]="[5, 10, 25, 50]" 
-                      showFirstLastButtons
-                      class="border-top">
+        <mat-paginator
+          [pageSize]="10"
+          [pageSizeOptions]="[5, 10, 25, 50]"
+          showFirstLastButtons
+          class="border-top">
         </mat-paginator>
 
-        <!-- Message si aucune délivrance -->
-        @if (delivrances().length === 0 && !loadingIndicator()) {
+        @if (getFilteredDelivrances().length === 0) {
           <div class="text-center py-5 text-muted">
             <mat-icon class="display-1 text-muted mb-3">inventory_2</mat-icon>
-            <h5>Aucune délivrance enregistrée</h5>
-            <p>
-              Aucune délivrance n'a été enregistrée pour le moment.
-              @if (demandesValidees().length > 0) {
-                <a href="javascript:void(0)" 
-                   (click)="openDelivranceModal(delivranceModalTemplate)"
-                   class="text-primary text-decoration-none">
-                  Créer la première délivrance
-                </a>
-              } @else {
-                <span class="text-warning">Aucune demande validée disponible</span>
-              }
-            </p>
+            <h5>Aucune délivrance trouvée</h5>
+            <p>Aucun résultat pour les filtres actuels.</p>
           </div>
         }
       </div>
+    </div>
+  }
+
+  <!-- Vue cartes -->
+  <div *ngIf="!loadingIndicator() && getViewMode() === 'cards'" class="card">
+    <div class="card-body">
+      <div *ngIf="getFilteredDelivrances().length > 0; else noCardResult" class="row g-4">
+        <div class="col-12 col-md-6 col-xl-4" *ngFor="let delivrance of getFilteredDelivrances()">
+          <div class="delivrance-card h-100" [ngClass]="getDelivranceCardClass(delivrance)">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div>
+                <div class="small text-muted">Patient</div>
+                <div class="fw-bold text-primary">
+                  {{ delivrance.demande?.patientPrenom }} {{ delivrance.demande?.patientNom }}
+                </div>
+                <div class="small text-muted">{{ delivrance.demande?.patientNumDossier || 'N/A' }}</div>
+              </div>
+
+              <span class="badge bg-info">
+                {{ delivrance.produitsSanguins?.length || 0 }} produit(s)
+              </span>
+            </div>
+
+            <div class="mb-3 d-flex gap-2 flex-wrap">
+              <span class="badge bg-primary">{{ delivrance.demande?.typeProduitDemande }}</span>
+              <span class="badge bg-danger">{{ delivrance.demande?.groupeSanguinPatient || 'N/A' }}</span>
+            </div>
+
+            <div class="delivrance-info-list">
+              <div class="delivrance-info-item">
+                <mat-icon class="info-icon">apartment</mat-icon>
+                <div>
+                  <div class="label">Service</div>
+                  <div class="value">{{ delivrance.demande?.serviceDemandeur }}</div>
+                </div>
+              </div>
+
+              <div class="delivrance-info-item">
+                <mat-icon class="info-icon">inventory_2</mat-icon>
+                <div>
+                  <div class="label">Produits</div>
+                  <div class="value">{{ getProduitsDisplay(delivrance.produitsSanguins || []) }}</div>
+                </div>
+              </div>
+
+              <div class="delivrance-info-item">
+                <mat-icon class="info-icon">event</mat-icon>
+                <div>
+                  <div class="label">Date délivrance</div>
+                  <div class="value">{{ delivrance.dateHeureDelivrance | date:'dd/MM/yyyy HH:mm' }}</div>
+                </div>
+              </div>
+
+              <div class="delivrance-info-item">
+                <mat-icon class="info-icon">place</mat-icon>
+                <div>
+                  <div class="label">Destination</div>
+                  <div class="value">{{ delivrance.destination }}</div>
+                </div>
+              </div>
+
+              <div class="delivrance-info-item">
+                <mat-icon class="info-icon">badge</mat-icon>
+                <div>
+                  <div class="label">Personnel</div>
+                  <div class="value">
+                    {{ delivrance.personnel ? (delivrance.personnel.prenom + ' ' + delivrance.personnel.nom) : 'Non spécifié' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 d-flex justify-content-end gap-2 flex-wrap">
+              <button mat-stroked-button color="primary" (click)="voirDetailsDelivrance(delivrance)">
+                <mat-icon>visibility</mat-icon>
+                Détails
+              </button>
+
+              @if (authService.canCreateTransfusion()) {
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  (click)="creerTransfusionDepuisDelivrance(delivrance)"
+                  [disabled]="!canCreateTransfusionFromDelivrance(delivrance)">
+                  <mat-icon>bloodtype</mat-icon>
+                  Transfusion
+                </button>
+              }
+
+              @if (canEditDelivrance(delivrance)) {
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  (click)="modifierDelivrance(delivrance)"
+                  [disabled]="savingIndicator()">
+                  <mat-icon>edit</mat-icon>
+                  Modifier
+                </button>
+              }
+
+              @if (authService.canDeleteDelivrance()) {
+                <button
+                  mat-stroked-button
+                  color="warn"
+                  (click)="deleteDelivrance(delivrance)"
+                  [disabled]="savingIndicator()">
+                  <mat-icon>delete</mat-icon>
+                  Supprimer
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noCardResult>
+        <div class="text-center py-5 text-muted">
+          <mat-icon class="display-1 text-muted mb-3">inventory_2</mat-icon>
+          <h5>Aucune délivrance trouvée</h5>
+          <p>Aucun résultat pour les filtres actuels.</p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Vue timeline -->
+  <div *ngIf="!loadingIndicator() && getViewMode() === 'timeline'" class="card">
+    <div class="card-body">
+      <div *ngIf="getFilteredDelivrances().length > 0; else noTimelineResult" class="timeline-wrapper">
+        <div class="timeline-item" *ngFor="let delivrance of getFilteredDelivrances()">
+          <div class="timeline-marker"></div>
+
+          <div class="timeline-content">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+              <div>
+                <div class="fw-bold text-primary">
+                  {{ delivrance.demande?.patientPrenom }} {{ delivrance.demande?.patientNom }}
+                </div>
+                <div class="small text-muted">
+                  {{ getTimelineDateLabel(delivrance) }} à {{ getTimelineTimeLabel(delivrance) }}
+                </div>
+              </div>
+
+              <div class="d-flex gap-2 flex-wrap">
+                <span class="badge bg-primary">{{ delivrance.demande?.typeProduitDemande }}</span>
+                <span class="badge bg-danger">{{ delivrance.demande?.groupeSanguinPatient || 'N/A' }}</span>
+                <span class="badge bg-info">{{ delivrance.produitsSanguins?.length || 0 }} produit(s)</span>
+              </div>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-4">
+                <strong>Service :</strong><br>
+                {{ delivrance.demande?.serviceDemandeur }}
+              </div>
+
+              <div class="col-md-4">
+                <strong>Destination :</strong><br>
+                {{ delivrance.destination }}<br>
+                <small class="text-muted">{{ delivrance.modeTransport }}</small>
+              </div>
+
+              <div class="col-md-4">
+                <strong>Personnel :</strong><br>
+                {{ delivrance.personnel ? (delivrance.personnel.prenom + ' ' + delivrance.personnel.nom) : 'Non spécifié' }}
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <strong>Produits :</strong>
+              <div class="mt-1">{{ getProduitsDisplay(delivrance.produitsSanguins || []) }}</div>
+            </div>
+
+            <div class="mt-3 d-flex justify-content-end gap-2 flex-wrap">
+              <button mat-stroked-button color="primary" (click)="voirDetailsDelivrance(delivrance)">
+                <mat-icon>visibility</mat-icon>
+                Détails
+              </button>
+
+              @if (authService.canCreateTransfusion()) {
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  (click)="creerTransfusionDepuisDelivrance(delivrance)"
+                  [disabled]="!canCreateTransfusionFromDelivrance(delivrance)">
+                  <mat-icon>bloodtype</mat-icon>
+                  Créer transfusion
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noTimelineResult>
+        <div class="text-center py-5 text-muted">
+          <mat-icon class="display-1 text-muted mb-3">timeline</mat-icon>
+          <h5>Aucune délivrance trouvée</h5>
+          <p>Aucun résultat pour les filtres actuels.</p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+  <ng-template #editDelivranceModalTemplate>
+    <div class="modal-backdrop" (click)="closeEditModal()">
+      <div class="modal-panel modal-lg" (click)="$event.stopPropagation()">
+
+        <header class="modal-header bg-primary text-white">
+          <div class="d-flex align-items-center">
+            <mat-icon class="me-3">edit</mat-icon>
+            <h4 class="modal-title mb-0">Modifier la délivrance</h4>
+          </div>
+          <button type="button" class="btn-close btn-close-white" (click)="closeEditModal()"></button>
+        </header>
+
+        <div class="modal-body" *ngIf="selectedDelivranceForEdit() as del">
+
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card border-0 bg-light">
+                <div class="card-body">
+                  <h6 class="mb-3">Informations de la délivrance</h6>
+
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <mat-form-field appearance="outline" class="w-100">
+                        <mat-label>Destination</mat-label>
+                        <input matInput [ngModel]="editDestination()" (ngModelChange)="editDestination.set($event)">
+                      </mat-form-field>
+                    </div>
+
+                    <div class="col-md-4">
+                      <mat-form-field appearance="outline" class="w-100">
+                        <mat-label>Mode de transport</mat-label>
+                        <input matInput [ngModel]="editModeTransport()" (ngModelChange)="editModeTransport.set($event)">
+                      </mat-form-field>
+                    </div>
+
+                    <div class="col-md-4">
+                      <mat-form-field appearance="outline" class="w-100">
+                        <mat-label>Patient</mat-label>
+                        <input matInput [value]="(del.demande?.patientPrenom || '') + ' ' + (del.demande?.patientNom || '')" readonly>
+                      </mat-form-field>
+                    </div>
+
+                    <div class="col-12">
+                      <mat-form-field appearance="outline" class="w-100">
+                        <mat-label>Observations</mat-label>
+                        <textarea
+                          matInput
+                          rows="3"
+                          [ngModel]="editObservations()"
+                          (ngModelChange)="editObservations.set($event)">
+                        </textarea>
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Produits -->
+          <div class="row">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header bg-light">
+                  <h6 class="mb-0">
+                    <mat-icon class="me-2">bloodtype</mat-icon>
+                    Produits associés
+                  </h6>
+                </div>
+
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-md-6 col-lg-4" *ngFor="let produit of getProduitsDisponiblesPourEdition()">
+                      <div
+                        class="neon-card produit"
+                        [class.selected]="isProduitSelected(produit)"
+                        [class.compatible]="isProduitEditable(produit)"
+                        [class.incompatible]="!isProduitEditable(produit)"
+                        (click)="isProduitEditable(produit) ? toggleProduitSelection(produit) : null">
+
+                        <div class="content">
+                          <h4>{{ produit.codeProduit }}</h4>
+                          <p>{{ produit.typeProduit }} • {{ produit.groupeSanguin }}{{ produit.rhesus }}</p>
+                          <small>
+                            Expire : {{ produit.datePeremption | date:'dd/MM/yyyy' }}
+                          </small>
+
+                          <div class="mt-2">
+                            <span class="badge bg-info me-1">{{ produit.etat }}</span>
+
+                            @if (!isProduitEditable(produit)) {
+                              <span class="badge bg-danger">NON MODIFIABLE</span>
+                            }
+                          </div>
+                        </div>
+
+                        <mat-icon class="check" *ngIf="isProduitSelected(produit)">check_circle</mat-icon>
+                      </div>
+                    </div>
+                  </div>
+
+                  @if (getProduitsDisponiblesPourEdition().length === 0) {
+                    <div class="text-center text-muted py-4">
+                      <mat-icon class="display-1 mb-2">inventory_2</mat-icon>
+                      <p>Aucun produit disponible pour cette édition</p>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button mat-stroked-button (click)="closeEditModal()" [disabled]="savingIndicator()">
+            Annuler
+          </button>
+
+          <button mat-raised-button color="primary" (click)="updateDelivranceComplete()" [disabled]="savingIndicator()">
+            <mat-icon>save</mat-icon>
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </ng-template>
+
+  <!-- Message vide global -->
+  @if (!loadingIndicator() && delivrances().length === 0) {
+    <div class="text-center py-5 text-muted">
+      <mat-icon class="display-1 text-muted mb-3">inventory_2</mat-icon>
+      <h5>Aucune délivrance enregistrée</h5>
+      <p>
+        Aucune délivrance n'a été enregistrée pour le moment.
+        @if (demandesValidees().length > 0) {
+          <a href="javascript:void(0)"
+             (click)="openDelivranceModal(delivranceModalTemplate)"
+             class="text-primary text-decoration-none">
+            Créer la première délivrance
+          </a>
+        } @else {
+          <span class="text-warning">Aucune demande validée disponible</span>
+        }
+      </p>
     </div>
   }
 
@@ -274,7 +753,6 @@
   <div class="neon-modal-backdrop" (click)="closeModal()">
     <div class="neon-modal-panel" (click)="$event.stopPropagation()">
 
-      <!-- HEADER  -->
       <header class="neon-header">
         <mat-icon class="neon-icon">inventory_2</mat-icon>
         <h2>Nouvelle délivrance</h2>
@@ -283,7 +761,6 @@
         </button>
       </header>
 
-      <!-- STEPPER  -->
       <div class="neon-stepper">
         <div class="step" [class.active]="step()===1" [class.done]="step()>1">
           <span class="bullet">1</span>
@@ -299,173 +776,161 @@
         </div>
       </div>
 
-      <!-- DYNAMIQUE BODY  -->
       <main class="neon-body">
-
-        <!-- ÉTAPE 1  -->
         @if(step()===1){
-        <section class="neon-step-content">
-          <h3>Rechercher une demande validée</h3>
+          <section class="neon-step-content">
+            <h3>Rechercher une demande validée</h3>
 
-          <mat-form-field appearance="fill" class="neon-search">
-            <mat-label>Nom, service, groupe sanguin…</mat-label>
-            <input matInput [(ngModel)]="searchTerm" 
-                   (input)="onSearchTermChange($event)"
-                   placeholder="Ex : Dupont, Cardio, O+"/>
-            <mat-icon matSuffix>search</mat-icon>
-          </mat-form-field>
-
-          <!-- Cartes demandes  -->
-          <div class="neon-cards-container">
-            @for (d of getDemandesFiltreesAvecStock(); track d.id) {
-            <div class="neon-card demande"
-                 [class.selected]="selectedDemande()?.id===d.id"
-                 tabindex="0"
-                 (click)="selectDemandeInModal(d)"
-                 (keyup.enter)="selectDemandeInModal(d)">
-              <div class="neon-glow-ring"></div>
-              <div class="content">
-                <h4>{{ d.patientPrenom }} {{ d.patientNom }}</h4>
-                <p>{{ d.serviceDemandeur }} • {{ d.typeProduitDemande }}</p>
-                <div class="badges">
-                  <span class="bg-danger">{{ d.groupeSanguinPatient }}</span>
-                  <span class="bg-success">{{ getProduitsCompatibles(d).length }} produit(s)</span>
-                </div>
-              </div>
-              <mat-icon class="check">check_circle</mat-icon>
-            </div>
-            }
-          </div>
-
-          @if (getDemandesFiltreesAvecStock().length === 0) {
-            <div class="neon-empty">
-              <mat-icon>search_off</mat-icon>
-              <p>Aucune demande ne correspond à votre recherche</p>
-            </div>
-          }
-        </section>
-        }
-
-        <!-- ÉTAPE 2  -->
-        @if(step()===2){
-        <section class="neon-step-content">
-          <h3>Sélectionner les produits compatibles</h3>
-
-          <!-- Barre de recherche + bouton Retour -->
-          <div class="neon-sub-header">
-            <button mat-stroked-button color="primary" (click)="step.set(1)" class="neon-back-btn">
-              <mat-icon>arrow_back</mat-icon> Retour
-            </button>
-            <div class="spacer"></div>
-            <mat-form-field appearance="outline" class="neon-search">
-              <mat-label>Rechercher un produit…</mat-label>
-              <input matInput [(ngModel)]="produitSearchTerm" 
-                     (input)="onProduitSearchTermChange($event)"
-                     placeholder="Code, type, groupe, date…"/>
+            <mat-form-field appearance="fill" class="neon-search">
+              <mat-label>Nom, service, groupe sanguin…</mat-label>
+              <input matInput [(ngModel)]="searchTerm"
+                     (input)="onSearchTermChange($event)"
+                     placeholder="Ex : Dupont, Cardio, O+"/>
               <mat-icon matSuffix>search</mat-icon>
             </mat-form-field>
-          </div>
 
-          <!-- Liste des produits filtrés -->
-          <div class="neon-cards-container produits">
-            @for (p of getProduitsCompatibles(selectedDemande()!); track p.id) {
-              @let compatible = estProduitCompatible(p, selectedDemande()!);
-              @let perime = !estProduitNonPerime(p);
-              @let selected = isProduitSelected(p);
-              
-              <div class="neon-card produit"
-                  [class.selected]="selected"
-                  [class.compatible]="compatible && !perime"
-                  [class.incompatible]="!compatible && !perime"
-                  [class.expired]="perime"
-                  tabindex="0"
-                  (click)="toggleProduitSelection(p)"
-                  (keyup.enter)="toggleProduitSelection(p)">
-                
-                <div class="neon-glow-ring"></div>
-                <div class="content">
-                  <h4>{{ p.codeProduit }}</h4>
-                  <p>{{ p.typeProduit }} • {{ p.groupeSanguin }}{{ p.rhesus }}</p>
-                  <small [class.text-danger]="perime" [class.text-warning]="!compatible && !perime">
-                    Expire : {{ p.datePeremption | date:'dd/MM/yyyy' }}
-                    
-                    <!-- Badges d'état -->
-                    @if (perime) {
-                      <span class="badge bg-danger ms-1">PÉRIMÉ</span>
-                    } @else if (!compatible) {
-                      <span class="badge bg-warning ms-1">INCOMPATIBLE</span>
-                    } @else {
-                      <span class="badge bg-success ms-1">COMPATIBLE</span>
-                    }
-                  </small>
-                  
-                  <!-- Message d'incompatibilité -->
-                  @if (!compatible && !perime) {
-                    <div class="incompatibility-warning">
-                      <mat-icon>warning</mat-icon>
-                      <span>Incompatible avec {{ selectedDemande()?.groupeSanguinPatient }}</span>
+            <div class="neon-cards-container">
+              @for (d of getDemandesFiltreesAvecStock(); track d.id) {
+                <div class="neon-card demande"
+                     [class.selected]="selectedDemande()?.id===d.id"
+                     tabindex="0"
+                     (click)="selectDemandeInModal(d)"
+                     (keyup.enter)="selectDemandeInModal(d)">
+                  <div class="neon-glow-ring"></div>
+                  <div class="content">
+                    <h4>{{ d.patientPrenom }} {{ d.patientNom }}</h4>
+                    <p>{{ d.serviceDemandeur }} • {{ d.typeProduitDemande }}</p>
+                    <div class="badges">
+                      <span class="bg-danger">{{ d.groupeSanguinPatient }}</span>
+                      <span class="bg-success">{{ getProduitsCompatibles(d).length }} produit(s)</span>
                     </div>
-                  }
+                  </div>
+                  <mat-icon class="check">check_circle</mat-icon>
                 </div>
-                
-                <mat-icon class="check" *ngIf="selected">check_circle</mat-icon>
+              }
+            </div>
+
+            @if (getDemandesFiltreesAvecStock().length === 0) {
+              <div class="neon-empty">
+                <mat-icon>search_off</mat-icon>
+                <p>Aucune demande ne correspond à votre recherche</p>
               </div>
             }
-          </div>
-
-          @if(getProduitsCompatibles(selectedDemande()!).length === 0){
-            <div class="neon-empty">
-              <mat-icon>search_off</mat-icon>
-              <p>Aucun produit compatible disponible</p>
-            </div>
-          }
-
-          <!-- Barre de sélection -->
-          @if(selectedProduits().length > 0){
-            <div class="neon-selection-bar">
-              <span>{{ selectedProduits().length }} produit(s) sélectionné(s)</span>
-              <button mat-raised-button color="primary" (click)="step.set(3)">Continuer</button>
-            </div>
-          }
-        </section>
+          </section>
         }
 
-        <!-- ÉTAPE 3  -->
+        @if(step()===2){
+          <section class="neon-step-content">
+            <h3>Sélectionner les produits compatibles</h3>
+
+            <div class="neon-sub-header">
+              <button mat-stroked-button color="primary" (click)="step.set(1)" class="neon-back-btn">
+                <mat-icon>arrow_back</mat-icon> Retour
+              </button>
+              <div class="spacer"></div>
+              <mat-form-field appearance="outline" class="neon-search">
+                <mat-label>Rechercher un produit…</mat-label>
+                <input matInput [(ngModel)]="produitSearchTerm"
+                       (input)="onProduitSearchTermChange($event)"
+                       placeholder="Code, type, groupe, date…"/>
+                <mat-icon matSuffix>search</mat-icon>
+              </mat-form-field>
+            </div>
+
+            <div class="neon-cards-container produits">
+              @for (p of getProduitsFiltres(); track p.id) {
+                @let compatible = estProduitCompatible(p, selectedDemande()!);
+                @let perime = !estProduitNonPerime(p);
+                @let selected = isProduitSelected(p);
+
+                <div class="neon-card produit"
+                     [class.selected]="selected"
+                     [class.compatible]="compatible && !perime"
+                     [class.incompatible]="!compatible && !perime"
+                     [class.expired]="perime"
+                     tabindex="0"
+                     (click)="toggleProduitSelection(p)"
+                     (keyup.enter)="toggleProduitSelection(p)">
+
+                  <div class="neon-glow-ring"></div>
+                  <div class="content">
+                    <h4>{{ p.codeProduit }}</h4>
+                    <p>{{ p.typeProduit }} • {{ p.groupeSanguin }}{{ p.rhesus }}</p>
+                    <small [class.text-danger]="perime" [class.text-warning]="!compatible && !perime">
+                      Expire : {{ p.datePeremption | date:'dd/MM/yyyy' }}
+
+                      @if (perime) {
+                        <span class="badge bg-danger ms-1">PÉRIMÉ</span>
+                      } @else if (!compatible) {
+                        <span class="badge bg-warning ms-1">INCOMPATIBLE</span>
+                      } @else {
+                        <span class="badge bg-success ms-1">COMPATIBLE</span>
+                      }
+                    </small>
+
+                    @if (!compatible && !perime) {
+                      <div class="incompatibility-warning">
+                        <mat-icon>warning</mat-icon>
+                        <span>Incompatible avec {{ selectedDemande()?.groupeSanguinPatient }}</span>
+                      </div>
+                    }
+                  </div>
+
+                  <mat-icon class="check" *ngIf="selected">check_circle</mat-icon>
+                </div>
+              }
+            </div>
+
+            @if(getProduitsFiltres().length === 0){
+              <div class="neon-empty">
+                <mat-icon>search_off</mat-icon>
+                <p>Aucun produit compatible disponible</p>
+              </div>
+            }
+
+            @if(selectedProduits().length > 0){
+              <div class="neon-selection-bar">
+                <span>{{ selectedProduits().length }} produit(s) sélectionné(s)</span>
+                <button mat-raised-button color="primary" (click)="step.set(3)">Continuer</button>
+              </div>
+            }
+          </section>
+        }
+
         @if(step()===3){
-        <section class="neon-step-content">
-          <h3>Récapitulatif</h3>
+          <section class="neon-step-content">
+            <h3>Récapitulatif</h3>
 
-          <div class="neon-recap">
-            <div class="bloc">
-              <h4>Patient</h4>
-              <p>{{ selectedDemande()?.patientPrenom }} {{ selectedDemande()?.patientNom }}</p>
-              <span class="badge bg-danger">{{ selectedDemande()?.groupeSanguinPatient }}</span>
+            <div class="neon-recap">
+              <div class="bloc">
+                <h4>Patient</h4>
+                <p>{{ selectedDemande()?.patientPrenom }} {{ selectedDemande()?.patientNom }}</p>
+                <span class="badge bg-danger">{{ selectedDemande()?.groupeSanguinPatient }}</span>
+              </div>
+
+              <div class="bloc">
+                <h4>Produits à délivrer</h4>
+                <ul>
+                  @for(p of selectedProduits(); track p.id){
+                    <li>{{ p.codeProduit }} – {{ p.typeProduit }} {{ p.groupeSanguin }}{{ p.rhesus }}</li>
+                  }
+                </ul>
+              </div>
+
+              <div class="bloc">
+                <h4>Destination</h4>
+                <p>{{ selectedDemande()?.serviceDemandeur }}</p>
+              </div>
             </div>
 
-            <div class="bloc">
-              <h4>Produits à délivrer</h4>
-              <ul>
-                @for(p of selectedProduits(); track p.id){
-                <li>{{ p.codeProduit }} – {{ p.typeProduit }} {{ p.groupeSanguin }}{{ p.rhesus }}</li>
-                }
-              </ul>
+            <div class="neon-actions">
+              <button mat-stroked-button (click)="step.set(2)">Retour</button>
+              <button mat-raised-button color="primary" (click)="creerDelivrance()" [disabled]="savingIndicator()">
+                <mat-icon>check</mat-icon>
+                Confirmer la délivrance
+              </button>
             </div>
-
-            <div class="bloc">
-              <h4>Destination</h4>
-              <p>{{ selectedDemande()?.serviceDemandeur }}</p>
-            </div>
-          </div>
-
-          <div class="neon-actions">
-            <button mat-stroked-button (click)="step.set(2)">Retour</button>
-            <button mat-raised-button color="primary" (click)="creerDelivrance()"
-                    [disabled]="savingIndicator()">
-              <mat-icon>check</mat-icon>
-              Confirmer la délivrance
-            </button>
-          </div>
-        </section>
+          </section>
         }
       </main>
     </div>
@@ -476,312 +941,212 @@
 <ng-template #detailsModalTemplate>
   <div class="modal-backdrop" (click)="closeDetailsModal()">
     <div class="modal-panel modal-lg" (click)="$event.stopPropagation()">
-      
-      <!-- Header -->
       <header class="modal-header bg-primary text-white">
         <div class="d-flex align-items-center">
           <mat-icon class="me-3">inventory_2</mat-icon>
           <h4 class="modal-title mb-0">Détails de la délivrance</h4>
         </div>
-        <button type="button" class="btn-close btn-close-white" (click)="closeDetailsModal()" aria-label="Close"></button>
+        <button type="button" class="btn-close btn-close-white" (click)="closeDetailsModal()"></button>
       </header>
 
-      <!-- Body -->
-      <main class="modal-body" *ngIf="selectedDelivranceForDetails()">
-        <div class="container-fluid">
-          
-          <!-- Section Informations Générales -->
-          <div class="row mb-4">
-            <div class="col-12">
-              <div class="card">
-                <div class="card-header bg-light">
-                  <h5 class="mb-0">
-                    <mat-icon class="me-2">info</mat-icon>
-                    Informations Générales
-                  </h5>
-                </div>
-                <div class="card-body">
-                  <div class="row">
-                    <div class="col-md-6">
-                      <table class="table table-sm">
-                        <tr>
-                          <th width="40%">ID Délivrance:</th>
-                          <td>{{ selectedDelivranceForDetails()?.id }}</td>
-                        </tr>
-                        <tr>
-                          <th>Date & Heure:</th>
-                          <td>{{ selectedDelivranceForDetails()?.dateHeureDelivrance | date:'dd/MM/yyyy HH:mm' }}</td>
-                        </tr>
-                        <tr>
-                          <th>Destination:</th>
-                          <td>{{ selectedDelivranceForDetails()?.destination }}</td>
-                        </tr>
-                      </table>
-                    </div>
-                    <div class="col-md-6">
-                      <table class="table table-sm">
-                        <tr>
-                          <th width="40%">Mode Transport:</th>
-                          <td>{{ selectedDelivranceForDetails()?.modeTransport }}</td>
-                        </tr>
-                        <tr>
-                          <th>Observations:</th>
-                          <td>{{ selectedDelivranceForDetails()?.observations || 'Aucune' }}</td>
-                        </tr>
-                        <tr>
-                          <th>Nombre de produits:</th>
-                          <td>
-                            <span class="badge bg-primary">
-                              {{ selectedDelivranceForDetails()?.produitsSanguins?.length || 0 }}
-                            </span>
-                          </td>
-                        </tr>
-                      </table>
-                    </div>
-                  </div>
-                </div>
+      <div class="modal-body" *ngIf="selectedDelivranceForDetails() as del">
+        <div class="d-flex justify-content-end gap-2 mb-3">
+          <button mat-stroked-button color="primary" (click)="imprimerDetails()">
+            <mat-icon>print</mat-icon>
+            Imprimer
+          </button>
+
+          @if (authService.canCreateTransfusion()) {
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="creerTransfusionDepuisDetails()"
+              [disabled]="!canCreateTransfusionFromDelivrance(del)">
+              <mat-icon>bloodtype</mat-icon>
+              Créer transfusion
+            </button>
+          }
+        </div>
+
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header bg-light">
+                <h5 class="mb-0">
+                  <mat-icon class="me-2">description</mat-icon>
+                  Informations générales
+                </h5>
+              </div>
+              <div class="card-body">
+                <table class="table table-sm mb-0">
+                  <tr><th width="30%">ID:</th><td>{{ del.id }}</td></tr>
+                  <tr><th>Date délivrance:</th><td>{{ del.dateHeureDelivrance | date:'dd/MM/yyyy HH:mm' }}</td></tr>
+                  <tr><th>Destination:</th><td>{{ del.destination }}</td></tr>
+                  <tr><th>Mode transport:</th><td>{{ del.modeTransport }}</td></tr>
+                  <tr><th>Observations:</th><td>{{ del.observations || 'Aucune observation' }}</td></tr>
+                </table>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Section Détails de la Demande -->
-          <div class="row mb-4">
-            <div class="col-12">
-              <div class="card">
-                <div class="card-header bg-light">
-                  <h5 class="mb-0">
-                    <mat-icon class="me-2">medical_services</mat-icon>
-                    Détails de la Demande
-                  </h5>
-                </div>
-                <div class="card-body">
-                  <div class="row" *ngIf="selectedDelivranceForDetails()?.demande">
-                    <div class="col-md-6">
-                      <table class="table table-sm">
-                        <tr>
-                          <th width="40%">ID Demande:</th>
-                          <td>{{ selectedDelivranceForDetails()?.demande?.id }}</td>
-                        </tr>
-                        <tr>
-                          <th>Patient:</th>
-                          <td>
-                            <strong>{{ selectedDelivranceForDetails()?.demande?.patientPrenom }} 
-                            {{ selectedDelivranceForDetails()?.demande?.patientNom }}</strong>
-                          </td>
-                        </tr>
-                        <tr>
-                          <th>Date naissance:</th>
-                          <td>{{ selectedDelivranceForDetails()?.demande?.patientDateNaissance | date:'dd/MM/yyyy' }}</td>
-                        </tr>
-                        <tr>
-                          <th>Groupe sanguin:</th>
-                          <td>
-                            <span class="badge bg-danger">
-                              {{ selectedDelivranceForDetails()?.demande?.groupeSanguinPatient }}
-                            </span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <th>N° dossier:</th>
-                          <td>{{ selectedDelivranceForDetails()?.demande?.patientNumDossier }}</td>
-                        </tr>
-                      </table>
-                    </div>
-                    <div class="col-md-6">
-                      <table class="table table-sm">
-                        <tr>
-                          <th width="40%">Service demandeur:</th>
-                          <td>{{ selectedDelivranceForDetails()?.demande?.serviceDemandeur }}</td>
-                        </tr>
-                        <tr>
-                          <th>Type produit:</th>
-                          <td>{{ selectedDelivranceForDetails()?.demande?.typeProduitDemande }}</td>
-                        </tr>
-                        <tr>
-                          <th>Quantité:</th>
-                          <td>{{ selectedDelivranceForDetails()?.demande?.quantiteDemande }}</td>
-                        </tr>
-                        <tr>
-                          <th>Statut:</th>
-                          <td>
-                            <span class="badge" 
-                                  [class.bg-success]="selectedDelivranceForDetails()?.demande?.statut === 'VALIDÉE'"
-                                  [class.bg-warning]="selectedDelivranceForDetails()?.demande?.statut === 'EN ATTENTE'"
-                                  [class.bg-danger]="selectedDelivranceForDetails()?.demande?.statut === 'REJETÉE'"
-                                  [class.bg-secondary]="!selectedDelivranceForDetails()?.demande?.statut">
-                              {{ selectedDelivranceForDetails()?.demande?.statut || 'N/A' }}
-                            </span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <th>Urgence:</th>
-                          <td>
-                            <mat-icon *ngIf="selectedDelivranceForDetails()?.demande?.urgence" 
-                                      class="text-danger">emergency</mat-icon>
-                            {{ selectedDelivranceForDetails()?.demande?.urgence ? 'OUI' : 'NON' }}
-                          </td>
-                        </tr>
-                      </table>
-                    </div>
-                  </div>
-                  <div class="alert alert-info" *ngIf="!selectedDelivranceForDetails()?.demande">
-                    <mat-icon>info</mat-icon>
-                    Aucune information de demande disponible
-                  </div>
-                </div>
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header bg-light">
+                <h5 class="mb-0">
+                  <mat-icon class="me-2">assignment</mat-icon>
+                  Demande associée
+                </h5>
               </div>
-            </div>
-          </div>
+              <div class="card-body" *ngIf="selectedDelivranceForDetails()?.demande">
+                <div class="row">
+                  <div class="col-md-6">
+                    <table class="table table-sm">
+                      <tr><th width="30%">Patient:</th><td><strong>{{ selectedDelivranceForDetails()?.demande?.patientPrenom }} {{ selectedDelivranceForDetails()?.demande?.patientNom }}</strong></td></tr>
+                      <tr><th>Dossier:</th><td>{{ selectedDelivranceForDetails()?.demande?.patientNumDossier }}</td></tr>
+                      <tr><th>Groupe sanguin:</th><td><span class="badge bg-danger">{{ selectedDelivranceForDetails()?.demande?.groupeSanguinPatient }}</span></td></tr>
+                      <tr><th>Service:</th><td>{{ selectedDelivranceForDetails()?.demande?.serviceDemandeur }}</td></tr>
+                    </table>
+                  </div>
 
-          <!-- Section Produits Délivrés -->
-          <div class="row mb-4">
-            <div class="col-12">
-              <div class="card">
-                <div class="card-header bg-light">
-                  <h5 class="mb-0">
-                    <mat-icon class="me-2">bloodtype</mat-icon>
-                    Produits Délivrés
-                    <span class="badge bg-primary ms-2">
-                      {{ selectedDelivranceForDetails()?.produitsSanguins?.length || 0 }}
-                    </span>
-                  </h5>
-                </div>
-                <div class="card-body p-0" *ngIf="selectedDelivranceForDetails()?.produitsSanguins?.length">
-                  <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                      <thead class="table-light">
-                        <tr>
-                          <th>Code Produit</th>
-                          <th>Type</th>
-                          <th>Groupe Sanguin</th>
-                          <th>Date Péremption</th>
-                          <th>État</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr *ngFor="let produit of selectedDelivranceForDetails()?.produitsSanguins">
-                          <td>
-                            <strong>{{ produit.codeProduit }}</strong>
-                          </td>
-                          <td>{{ produit.typeProduit }}</td>
-                          <td>
-                            <span class="badge bg-info">
-                              {{ produit.groupeSanguin }}{{ produit.rhesus || '+' }}
-                            </span>
-                          </td>
-                          <td>
-                            {{ produit.datePeremption | date:'dd/MM/yyyy' }}
-                            <span *ngIf="isProduitPerime(produit)" class="badge bg-danger ms-1">PÉRIMÉ</span>
-                          </td>
-                          <td>
-                            <span class="badge" [ngClass]="{
-                              'bg-success': produit.etat === 'UTILISÉ',
-                              'bg-secondary': produit.etat === 'DISPONIBLE',
-                              'bg-warning': produit.etat === 'RÉSERVÉ',
-                              'bg-info': produit.etat === 'DÉLIVRÉ'
-                            }">
-                              {{ produit.etat }}
-                            </span>
-                          </td>
-                        </tr>
-                      </tbody>
+                  <div class="col-md-6">
+                    <table class="table table-sm">
+                      <tr><th width="30%">Type produit:</th><td>{{ selectedDelivranceForDetails()?.demande?.typeProduitDemande }}</td></tr>
+                      <tr><th>Quantité:</th><td>{{ selectedDelivranceForDetails()?.demande?.quantiteDemande }}</td></tr>
+                      <tr>
+                        <th>Statut:</th>
+                        <td>
+                          <span class="badge"
+                                [class.bg-success]="selectedDelivranceForDetails()?.demande?.statut === 'VALIDÉE'"
+                                [class.bg-warning]="selectedDelivranceForDetails()?.demande?.statut === 'EN ATTENTE'"
+                                [class.bg-danger]="selectedDelivranceForDetails()?.demande?.statut === 'REJETÉE'"
+                                [class.bg-secondary]="!selectedDelivranceForDetails()?.demande?.statut">
+                            {{ selectedDelivranceForDetails()?.demande?.statut || 'N/A' }}
+                          </span>
+                        </td>
+                      </tr>
+                      <tr><th>Urgence:</th><td><mat-icon *ngIf="selectedDelivranceForDetails()?.demande?.urgence" class="text-danger">emergency</mat-icon> {{ selectedDelivranceForDetails()?.demande?.urgence ? 'OUI' : 'NON' }}</td></tr>
                     </table>
                   </div>
                 </div>
-                <div class="card-body" *ngIf="!selectedDelivranceForDetails()?.produitsSanguins?.length">
-                  <div class="alert alert-warning">
-                    <mat-icon>warning</mat-icon>
-                    Aucun produit associé à cette délivrance
-                  </div>
-                </div>
               </div>
             </div>
           </div>
-
-          <!-- Section Personnel -->
-          <div class="row">
-            <div class="col-12">
-              <div class="card">
-                <div class="card-header bg-light">
-                  <h5 class="mb-0">
-                    <mat-icon class="me-2">badge</mat-icon>
-                    Personnel Responsable
-                  </h5>
-                </div>
-                <div class="card-body">
-                  <div class="row" *ngIf="selectedDelivranceForDetails()?.personnel">
-                    <div class="col-md-2 text-center">
-                      <div class="avatar-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" 
-                           style="width: 80px; height: 80px; border-radius: 50%; font-size: 32px;">
-                        {{ getInitials(selectedDelivranceForDetails()?.personnel) }}
-                      </div>
-                    </div>
-                    <div class="col-md-10">
-                      <table class="table table-sm">
-                        <tr>
-                          <th width="30%">Nom complet:</th>
-                          <td>
-                            <strong>{{ selectedDelivranceForDetails()?.personnel?.prenom }} 
-                            {{ selectedDelivranceForDetails()?.personnel?.nom }}</strong>
-                          </td>
-                        </tr>
-                        <tr>
-                          <th>Matricule:</th>
-                          <td>{{ selectedDelivranceForDetails()?.personnel?.matricule }}</td>
-                        </tr>
-                        <tr>
-                          <th>Fonction:</th>
-                          <td>{{ selectedDelivranceForDetails()?.personnel?.fonction }}</td>
-                        </tr>
-                        <tr>
-                          <th>Email:</th>
-                          <td>{{ selectedDelivranceForDetails()?.personnel?.email }}</td>
-                        </tr>
-                        <tr>
-                          <th>Téléphone:</th>
-                          <td>{{ selectedDelivranceForDetails()?.personnel?.telephone }}</td>
-                        </tr>
-                        <tr>
-                          <th>Statut:</th>
-                          <td>
-                            <span class="badge" [ngClass]="{
-                              'bg-success': selectedDelivranceForDetails()?.personnel?.statut === 'ACTIF',
-                              'bg-danger': selectedDelivranceForDetails()?.personnel?.statut === 'INACTIF'
-                            }">
-                              {{ selectedDelivranceForDetails()?.personnel?.statut }}
-                            </span>
-                          </td>
-                        </tr>
-                      </table>
-                    </div>
-                  </div>
-                  <div class="alert alert-info" *ngIf="!selectedDelivranceForDetails()?.personnel">
-                    <mat-icon>info</mat-icon>
-                    Aucune information sur le personnel responsable
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
         </div>
-      </main>
 
-      <!-- Footer -->
-      <footer class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeDetailsModal()">
-          <mat-icon>close</mat-icon>
-          Fermer
-        </button>
-        <button type="button" class="btn btn-primary" (click)="imprimerDetails()">
-          <mat-icon>print</mat-icon>
-          Imprimer
-        </button>
-        <button type="button" class="btn btn-accent" (click)="creerTransfusionDepuisDetails()">
-          <mat-icon>bloodtype</mat-icon>
-          Créer transfusion
-        </button>
-      </footer>
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header bg-light">
+                <h5 class="mb-0">
+                  <mat-icon class="me-2">bloodtype</mat-icon>
+                  Produits Délivrés
+                  <span class="badge bg-primary ms-2">
+                    {{ selectedDelivranceForDetails()?.produitsSanguins?.length || 0 }}
+                  </span>
+                </h5>
+              </div>
+
+              <div class="card-body p-0" *ngIf="selectedDelivranceForDetails()?.produitsSanguins?.length">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Code Produit</th>
+                        <th>Type</th>
+                        <th>Groupe Sanguin</th>
+                        <th>Date Péremption</th>
+                        <th>État</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let produit of selectedDelivranceForDetails()?.produitsSanguins">
+                        <td><strong>{{ produit.codeProduit }}</strong></td>
+                        <td>{{ produit.typeProduit }}</td>
+                        <td><span class="badge bg-info">{{ produit.groupeSanguin }}{{ produit.rhesus || '+' }}</span></td>
+                        <td>
+                          {{ produit.datePeremption | date:'dd/MM/yyyy' }}
+                          <span *ngIf="isProduitPerime(produit)" class="badge bg-danger ms-2">PÉRIMÉ</span>
+                        </td>
+                        <td>
+                          <span class="badge" [ngClass]="{
+                            'bg-danger': produit.etat === 'PÉRIMÉ',
+                            'bg-success': produit.etat === 'UTILISÉ',
+                            'bg-secondary': produit.etat === 'DISPONIBLE',
+                            'bg-warning': produit.etat === 'RÉSERVÉ',
+                            'bg-info': produit.etat === 'DÉLIVRÉ'
+                          }">
+                            {{ produit.etat }}
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card-body" *ngIf="!selectedDelivranceForDetails()?.produitsSanguins?.length">
+                <div class="alert alert-warning">
+                  <mat-icon>warning</mat-icon>
+                  Aucun produit associé à cette délivrance
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header bg-light">
+                <h5 class="mb-0">
+                  <mat-icon class="me-2">badge</mat-icon>
+                  Personnel Responsable
+                </h5>
+              </div>
+
+              <div class="card-body">
+                <div class="row" *ngIf="selectedDelivranceForDetails()?.personnel">
+                  <div class="col-md-2 text-center">
+                    <div class="avatar-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3"
+                         style="width: 80px; height: 80px; border-radius: 50%; font-size: 32px;">
+                      {{ getInitials(selectedDelivranceForDetails()?.personnel) }}
+                    </div>
+                  </div>
+
+                  <div class="col-md-10">
+                    <table class="table table-sm">
+                      <tr><th width="30%">Nom complet:</th><td><strong>{{ selectedDelivranceForDetails()?.personnel?.prenom }} {{ selectedDelivranceForDetails()?.personnel?.nom }}</strong></td></tr>
+                      <tr><th>Matricule:</th><td>{{ selectedDelivranceForDetails()?.personnel?.matricule }}</td></tr>
+                      <tr><th>Fonction:</th><td>{{ selectedDelivranceForDetails()?.personnel?.fonction }}</td></tr>
+                      <tr><th>Email:</th><td>{{ selectedDelivranceForDetails()?.personnel?.email }}</td></tr>
+                      <tr><th>Téléphone:</th><td>{{ selectedDelivranceForDetails()?.personnel?.telephone }}</td></tr>
+                      <tr>
+                        <th>Statut:</th>
+                        <td>
+                          <span class="badge" [ngClass]="{
+                            'bg-success': selectedDelivranceForDetails()?.personnel?.statut === 'ACTIF',
+                            'bg-danger': selectedDelivranceForDetails()?.personnel?.statut === 'INACTIF'
+                          }">
+                            {{ selectedDelivranceForDetails()?.personnel?.statut }}
+                          </span>
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
+                </div>
+
+                <div class="alert alert-info" *ngIf="!selectedDelivranceForDetails()?.personnel">
+                  <mat-icon>info</mat-icon>
+                  Aucune information sur le personnel responsable
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 </ng-template>

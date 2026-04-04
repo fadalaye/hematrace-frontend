@@ -1,469 +1,439 @@
-<!-- src/app/pages/main-app/dashboard/dashboard.component.html -->
-<div class="dashboard-container">
-  
-  <!-- ============================================
-       SECTION EN-TÊTE
-  ============================================ -->
-  <div class="dashboard-header mb-4">
-    <h1 class="page-title">
-      <mat-icon class="me-2">dashboard</mat-icon>
-      Tableau de bord
-    </h1>
-    <p class="page-subtitle">
-      Vue d'ensemble de la plateforme HemaTrace
-      <span class="text-muted ms-2">{{ today | date:'dd MMMM yyyy' }}</span>
-    </p>
-  </div>
+<section class="dashboard-page">
+  <div class="container-fluid">
 
-  <!-- ============================================
-       SECTION MESSAGES D'ERREUR
-  ============================================ -->
-  @if (error && !loading) {
-    <div class="alert alert-danger mb-4">
-      <div class="d-flex align-items-center">
-        <mat-icon class="me-2">error</mat-icon>
-        <div class="flex-grow-1">
-          <strong>Erreur de chargement</strong>
-          <p class="mb-0">Impossible de charger les données du dashboard. Veuillez réessayer.</p>
+    <section class="hero-panel mb-4 fade-in-up">
+      <div class="hero-panel__content">
+        <div>
+          <div class="hero-panel__eyebrow">HemaTrace Analytics</div>
+          <h1 class="hero-panel__title">Tableau de bord opérationnel</h1>
+          <p class="hero-panel__subtitle">
+            Vue unifiée du stock sanguin, des demandes, des délivrances, des transfusions et des incidents.
+          </p>
+
+          <div class="hero-panel__meta" *ngIf="lastRefresh">
+            <span class="hero-chip">
+              <i class="fas fa-clock mr-2"></i>
+              Dernière mise à jour : {{ lastRefresh | date:'dd/MM/yyyy HH:mm' }}
+            </span>
+          </div>
         </div>
-        <button mat-button color="warn" (click)="refreshDashboard()">
-          <mat-icon>refresh</mat-icon>
-          Réessayer
-        </button>
-      </div>
-    </div>
-  }
 
-  <!-- ============================================
-       SECTION ALERTES URGENTES
-  ============================================ -->
-  @if (!loading && !error && stats.alertes && 
-       (stats.alertes.produitsPerimes > 0 || stats.alertes.demandesUrgentes > 0 || stats.alertes.produitsCritiques > 0)) {
-    <div class="alertes-section mb-4">
-      <mat-card appearance="outlined" class="border-danger">
-        <mat-card-content class="py-2">
-          <div class="d-flex align-items-center">
-            <mat-icon color="warn" class="me-3">warning</mat-icon>
-            <div class="flex-grow-1">
-              <strong class="text-danger">Attention requise</strong>
-              <div class="d-flex flex-wrap gap-2 mt-1">
-                @if (stats.alertes.produitsPerimes > 0) {
-                  <a mat-raised-button color="warn" routerLink="/app/produits-sanguins" class="alert-btn">
-                    <mat-icon>inventory</mat-icon>
-                    {{ stats.alertes.produitsPerimes }} produit(s) périmé(s)
-                  </a>
-                }
-                @if (stats.alertes.demandesUrgentes > 0) {
-                  <a mat-raised-button color="accent" routerLink="/app/demandes" class="alert-btn">
-                    <mat-icon>emergency</mat-icon>
-                    {{ stats.alertes.demandesUrgentes }} demande(s) urgente(s)
-                  </a>
-                }
-                @if (stats.alertes.produitsCritiques > 0) {
-                  <a mat-stroked-button color="primary" routerLink="/app/produits-sanguins" class="alert-btn">
-                    <mat-icon>schedule</mat-icon>
-                    {{ stats.alertes.produitsCritiques }} produit(s) critique(s)
-                  </a>
-                }
-              </div>
-            </div>
-            <button mat-icon-button (click)="dismissAlerts()" matTooltip="Masquer les alertes">
-              <mat-icon>close</mat-icon>
+        <div class="hero-panel__actions">
+          <div class="period-switch">
+            <button
+              type="button"
+              class="period-switch__btn"
+              [class.active]="selectedPeriod === 7"
+              (click)="onPeriodChange(7)">
+              7 j
+            </button>
+            <button
+              type="button"
+              class="period-switch__btn"
+              [class.active]="selectedPeriod === 15"
+              (click)="onPeriodChange(15)">
+              15 j
+            </button>
+            <button
+              type="button"
+              class="period-switch__btn"
+              [class.active]="selectedPeriod === 30"
+              (click)="onPeriodChange(30)">
+              30 j
             </button>
           </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
-  }
 
-  <!-- ============================================
-       SECTION CHARGEMENT
-  ============================================ -->
-  @if (loading) {
-    <div class="loading-container text-center py-5">
-      <mat-spinner diameter="50"></mat-spinner>
-      <p class="mt-3 text-muted">Chargement des données...</p>
-    </div>
-  }
-
-  <!-- ============================================
-       SECTION STATISTIQUES PRINCIPALES
-  ============================================ -->
-  @if (!loading && !error && stats) {
-    
-    <!-- Grille des cartes de statistiques -->
-    <div class="stats-grid mb-4">
-      
-      <!-- Carte Produits Sanguins -->
-      <mat-card class="stats-card">
-        <mat-card-header>
-          <mat-card-title>
-            <mat-icon class="me-2" color="primary">bloodtype</mat-icon>
-            Produits Sanguins
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="stat-number">{{ stats.produits.total }}</div>
-          <div class="stat-detail">
-            @if (stats.produits.disponibles > 0) {
-              <span class="text-success">{{ stats.produits.disponibles }} disponibles</span>
-            } @else {
-              <span class="text-danger">Aucun disponible</span>
-            }
-          </div>
-          <div class="stat-progress mt-3">
-            <div class="d-flex justify-content-between small mb-1">
-              <span>Disponibilité</span>
-              <span>{{ getProgressValue() }}%</span>
-            </div>
-            <mat-progress-bar 
-              mode="determinate" 
-              [value]="getProgressValue()"
-              [color]="getProgressValue() > 50 ? 'primary' : 'warn'">
-            </mat-progress-bar>
-          </div>
-          <button mat-button color="primary" routerLink="/app/produits-sanguins" class="mt-3 w-100">
-            Voir le stock
-            <mat-icon class="ms-2">arrow_forward</mat-icon>
+          <button class="btn btn-light btn-hero" (click)="loadDashboard()">
+            <i class="fas fa-rotate-right mr-2"></i>
+            Actualiser
           </button>
-        </mat-card-content>
-      </mat-card>
-
-      <!-- Carte Demandes -->
-      <mat-card class="stats-card">
-        <mat-card-header>
-          <mat-card-title>
-            <mat-icon class="me-2" color="accent">description</mat-icon>
-            Demandes
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="stat-number">{{ stats.demandes.total }}</div>
-          <div class="stat-detail">
-            @if (stats.demandes.enAttente > 0) {
-              <span class="text-warning">{{ stats.demandes.enAttente }} en attente</span>
-            } @else {
-              <span class="text-success">Toutes traitées</span>
-            }
-          </div>
-          <div class="stat-chips mt-3">
-            <mat-chip-set>
-              <mat-chip color="accent" selected>
-                {{ stats.demandes.validees }} validées
-              </mat-chip>
-              @if (stats.demandes.urgentes > 0) {
-                <mat-chip color="warn" selected>
-                  {{ stats.demandes.urgentes }} urgentes
-                </mat-chip>
-              }
-            </mat-chip-set>
-          </div>
-          <button mat-button color="accent" routerLink="/app/demandes" class="mt-3 w-100">
-            Gérer les demandes
-            <mat-icon class="ms-2">arrow_forward</mat-icon>
-          </button>
-        </mat-card-content>
-      </mat-card>
-
-      <!-- Carte Délivrances -->
-      <mat-card class="stats-card">
-        <mat-card-header>
-          <mat-card-title>
-            <mat-icon class="me-2" color="success">local_shipping</mat-icon>
-            Délivrances
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="stat-number">{{ stats.delivrances.total }}</div>
-          <div class="stat-detail">
-            <span class="text-info">{{ stats.delivrances.aujourdhui }} aujourd'hui</span>
-          </div>
-          <div class="stat-info mt-3">
-            <div class="d-flex justify-content-between">
-              <span>Ce mois:</span>
-              <strong>{{ stats.delivrances.ceMois }}</strong>
-            </div>
-          </div>
-          <button mat-button color="success" routerLink="/app/delivrances" class="mt-3 w-100">
-            Voir les délivrances
-            <mat-icon class="ms-2">arrow_forward</mat-icon>
-          </button>
-        </mat-card-content>
-      </mat-card>
-
-      <!-- Carte Transfusions -->
-      <mat-card class="stats-card">
-        <mat-card-header>
-          <mat-card-title>
-            <mat-icon class="me-2" color="warn">healing</mat-icon>
-            Transfusions
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="stat-number">{{ stats.transfusions.total }}</div>
-          <div class="stat-detail">
-            @if (stats.transfusions.avecEffets > 0) {
-              <span class="text-danger">{{ stats.transfusions.avecEffets }} avec effets</span>
-            } @else {
-              <span class="text-success">Aucun effet indésirable</span>
-            }
-          </div>
-          <div class="tolerance-stats mt-3">
-            <div class="d-flex justify-content-between small">
-              <span>Ex: {{ stats.transfusions.tolerance.EXCELLENTE }}</span>
-              <span>B: {{ stats.transfusions.tolerance.BONNE }}</span>
-              <span>M: {{ stats.transfusions.tolerance.MOYENNE }}</span>
-              <span>Mv: {{ stats.transfusions.tolerance.MAUVAISE }}</span>
-            </div>
-          </div>
-          <button mat-button color="warn" routerLink="/app/transfusions" class="mt-3 w-100">
-            Voir les transfusions
-            <mat-icon class="ms-2">arrow_forward</mat-icon>
-          </button>
-        </mat-card-content>
-      </mat-card>
-    </div>
-
-    <!-- ============================================
-         SECTION GRAPHIQUES
-    ============================================ -->
-    <div class="charts-section mb-4">
-      <div class="row g-3">
-        
-        <!-- Graphique groupes sanguins -->
-        <div class="col-lg-6">
-          <mat-card>
-            <mat-card-header>
-              <mat-card-title>
-                <mat-icon class="me-2">pie_chart</mat-icon>
-                Répartition par groupe sanguin
-              </mat-card-title>
-              <span class="ms-auto badge" [ngClass]="{
-                'bg-success': getGroupesTotal() > 0,
-                'bg-secondary': getGroupesTotal() === 0
-              }">
-                Total: {{ getGroupesTotal() }}
-              </span>
-            </mat-card-header>
-            <mat-card-content>
-              
-              <!-- Badges des groupes -->
-              <div class="d-flex flex-wrap gap-2 mb-3">
-                @for (groupe of stats.produits.groupes; track groupe.groupe) {
-                  <mat-chip [style.background-color]="groupe.couleur" 
-                            [style.color]="getContrastColor(groupe.couleur)">
-                    {{ groupe.groupe }}: {{ groupe.count }}
-                  </mat-chip>
-                }
-              </div>
-              
-              <!-- Conteneur du graphique -->
-              <div class="chart-container">
-                <canvas #groupeChart></canvas>
-                
-                <!-- Overlay si pas de données -->
-                @if (getGroupesTotal() === 0) {
-                  <div class="empty-chart-overlay">
-                    <mat-icon>pie_chart</mat-icon>
-                    <p class="mt-2 mb-0">Aucun produit sanguin disponible</p>
-                    <button mat-button color="primary" class="mt-3" routerLink="/app/produits-sanguins/ajouter">
-                      <mat-icon>add</mat-icon>
-                      Ajouter un produit
-                    </button>
-                  </div>
-                }
-              </div>
-              
-            </mat-card-content>
-          </mat-card>
         </div>
+      </div>
 
-        <!-- Graphique types de produits -->
-        <div class="col-lg-6">
-          <mat-card>
-            <mat-card-header>
-              <mat-card-title>
-                <mat-icon class="me-2">bar_chart</mat-icon>
-                Stock par type de produit
-              </mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-              
-              <!-- Badges des types -->
-              <div class="d-flex flex-wrap gap-2 mb-3">
-                @for (type of stats.produits.types; track type.type) {
-                  <mat-chip [style.background-color]="type.couleur" 
-                            [style.color]="getContrastColor(type.couleur)">
-                    <mat-icon>{{ type.icon }}</mat-icon>
-                    {{ type.type }}: {{ type.count }}
-                  </mat-chip>
-                }
-              </div>
-              
-              <!-- Conteneur du graphique -->
-              <div class="chart-container">
-                <canvas #typeChart></canvas>
-                
-                <!-- Overlay si pas de données -->
-                @if (getTypesTotal() === 0) {
-                  <div class="empty-chart-overlay">
-                    <mat-icon>bar_chart</mat-icon>
-                    <p class="mt-2 mb-0">Aucun produit en stock</p>
-                    <button mat-button color="primary" class="mt-3" routerLink="/app/produits-sanguins/ajouter">
-                      <mat-icon>add</mat-icon>
-                      Ajouter un produit
-                    </button>
-                  </div>
-                }
-              </div>
-              
-            </mat-card-content>
-          </mat-card>
+      <div class="hero-stats">
+        <div
+          class="hero-stat-card"
+          *ngFor="let item of heroStats"
+          [ngClass]="getMetricClass(item.state)">
+          <div class="hero-stat-card__icon">
+            <i [class]="item.icon"></i>
+          </div>
+          <div>
+            <div class="hero-stat-card__label">{{ item.label }}</div>
+            <div class="hero-stat-card__value">{{ item.value }}</div>
+            <div class="hero-stat-card__helper">{{ item.helper }}</div>
+          </div>
         </div>
-        
+      </div>
+    </section>
+
+    <div *ngIf="loading" class="dashboard-loading card border-0 shadow-sm fade-in-up">
+      <div class="card-body text-center py-5">
+        <div class="spinner-border text-primary mb-3" role="status"></div>
+        <p class="mb-0">Chargement des indicateurs...</p>
       </div>
     </div>
 
-    <!-- ============================================
-         SECTION ACTIVITÉS ET INCIDENTS
-    ============================================ -->
-    <div class="activities-section">
-      <div class="row g-3">
-        
-        <!-- Activités récentes -->
-        <div class="col-lg-8">
-          <mat-card>
-            <mat-card-header>
-              <mat-card-title>
-                <mat-icon class="me-2">history</mat-icon>
-                Activités récentes
-              </mat-card-title>
-              <div class="ms-auto">
-                <button mat-button color="primary" (click)="toggleActivities()">
-                  {{ showAllActivities ? 'Réduire' : 'Voir tout' }}
-                  <mat-icon class="ms-1">{{ showAllActivities ? 'expand_less' : 'expand_more' }}</mat-icon>
+    <div *ngIf="!loading && errorMessage" class="alert alert-danger shadow-sm border-0 fade-in-up">
+      <i class="fas fa-circle-exclamation mr-2"></i>
+      {{ errorMessage }}
+    </div>
+
+    <ng-container *ngIf="!loading && !errorMessage && overview">
+
+      <section class="section-block fade-in-up">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Accès rapide</h2>
+            <p class="section-subtitle">Navigation directe vers les principaux modules</p>
+          </div>
+        </div>
+
+        <div class="shortcut-grid">
+          <button
+            type="button"
+            class="shortcut-card"
+            *ngFor="let shortcut of quickShortcuts; trackBy: trackByShortcut"
+            [ngClass]="shortcut.colorClass"
+            (click)="goToRoute(shortcut.route)">
+            <div class="shortcut-card__icon">
+              <i [class]="shortcut.icon"></i>
+            </div>
+            <div class="shortcut-card__content">
+              <div class="shortcut-card__title">{{ shortcut.title }}</div>
+              <div class="shortcut-card__subtitle">{{ shortcut.subtitle }}</div>
+            </div>
+            <div class="shortcut-card__arrow">
+              <i class="fas fa-arrow-right"></i>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <section class="section-block fade-in-up">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Indicateurs clés</h2>
+            <p class="section-subtitle">Cartes cliquables pour accéder aux écrans détaillés</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-xxl-3 col-xl-3 col-lg-4 col-md-6" *ngFor="let kpi of mainKpis; trackBy: trackByKpi">
+            <button
+              type="button"
+              class="kpi-card kpi-card--clickable"
+              [ngClass]="kpi.colorClass"
+              (click)="openKpi(kpi)">
+              <div class="kpi-card__top">
+                <div class="kpi-card__icon">
+                  <i [class]="kpi.icon"></i>
+                </div>
+                <div class="kpi-card__link">
+                  <i class="fas fa-arrow-up-right-from-square"></i>
+                </div>
+              </div>
+
+              <div class="kpi-card__value">{{ kpi.value }}</div>
+              <div class="kpi-card__title">{{ kpi.title }}</div>
+              <div class="kpi-card__subtitle">{{ kpi.subtitle }}</div>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-block fade-in-up">
+        <div class="row">
+          <div class="col-xl-8">
+            <div class="dashboard-card card border-0">
+              <div class="card-body">
+                <div class="section-header mb-4">
+                  <div>
+                    <h2 class="section-title">Santé opérationnelle</h2>
+                    <p class="section-subtitle">Ratios métier pour piloter la performance</p>
+                  </div>
+                </div>
+
+                <div class="operational-grid">
+                  <div
+                    class="operational-card"
+                    *ngFor="let metric of operationalMetrics"
+                    [ngClass]="getMetricClass(metric.state)">
+                    <div class="operational-card__icon">
+                      <i [class]="metric.icon"></i>
+                    </div>
+                    <div class="operational-card__content">
+                      <div class="operational-card__label">{{ metric.label }}</div>
+                      <div class="operational-card__value">{{ metric.value }}</div>
+                      <div class="operational-card__helper">{{ metric.helper }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-xl-4">
+            <div class="dashboard-card card border-0 h-100">
+              <div class="card-body">
+                <div class="section-header mb-4">
+                  <div>
+                    <h2 class="section-title">Alertes</h2>
+                    <p class="section-subtitle">Éléments à surveiller immédiatement</p>
+                  </div>
+                </div>
+
+                <ng-container *ngIf="overview.alertes?.length; else noAlerts">
+                  <div
+                    *ngFor="let alert of overview.alertes"
+                    class="alert-box"
+                    [ngClass]="getAlertClass(alert)">
+                    <div class="alert-box__left">
+                      <div class="alert-box__title">{{ alert.titre }}</div>
+                      <div class="alert-box__message">{{ alert.message }}</div>
+                    </div>
+                    <div class="alert-box__value">{{ alert.valeur }}</div>
+                  </div>
+                </ng-container>
+
+                <ng-template #noAlerts>
+                  <div class="empty-state">
+                    <div class="empty-state__icon">
+                      <i class="fas fa-shield-heart"></i>
+                    </div>
+                    <div class="empty-state__title">Aucune alerte active</div>
+                    <div class="empty-state__text">
+                      Le système ne signale actuellement aucun événement critique.
+                    </div>
+                  </div>
+                </ng-template>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-block fade-in-up">
+        <div class="row">
+          <div class="col-xl-4">
+            <div class="dashboard-card card border-0">
+              <div class="card-body">
+                <div class="section-header mb-3">
+                  <div>
+                    <h2 class="section-title">Stock par groupe</h2>
+                    <p class="section-subtitle">Répartition du volume total</p>
+                  </div>
+                </div>
+
+                <div class="chart-wrapper chart-wrapper--donut">
+                  <canvas
+                    baseChart
+                    [data]="stockByGroupChartData"
+                    [options]="doughnutOptions"
+                    [type]="'doughnut'">
+                  </canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-xl-8">
+            <div class="dashboard-card card border-0">
+              <div class="card-body">
+                <div class="section-header mb-3">
+                  <div>
+                    <h2 class="section-title">Stock par type de produit</h2>
+                    <p class="section-subtitle">Comparaison entre total et disponible</p>
+                  </div>
+                </div>
+
+                <div class="chart-wrapper">
+                  <canvas
+                    baseChart
+                    [data]="stockByTypeChartData"
+                    [options]="barOptions"
+                    [type]="'bar'">
+                  </canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-block fade-in-up">
+        <div class="dashboard-card card border-0">
+          <div class="card-body">
+            <div class="section-header mb-3">
+              <div>
+                <h2 class="section-title">Tendances sur {{ selectedPeriod }} jours</h2>
+                <p class="section-subtitle">Évolution quotidienne des principaux flux</p>
+              </div>
+            </div>
+
+            <div class="chart-wrapper chart-wrapper--large">
+              <canvas
+                baseChart
+                [data]="trendsChartData"
+                [options]="lineOptions"
+                [type]="'line'">
+              </canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-block fade-in-up">
+        <div class="row">
+          <div class="col-xl-6">
+            <div class="dashboard-card card border-0">
+              <div class="card-body p-0">
+                <div class="table-card-header">
+                  <div>
+                    <h2 class="section-title mb-1">Stock par groupe sanguin</h2>
+                    <p class="section-subtitle mb-0">Disponibilité par groupe</p>
+                  </div>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table table-modern mb-0">
+                    <thead>
+                      <tr>
+                        <th>Groupe</th>
+                        <th>Total</th>
+                        <th>Disponibles</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of overview.stockParGroupe">
+                        <td><strong>{{ item.groupe }}</strong></td>
+                        <td>{{ item.total }}</td>
+                        <td>{{ item.disponibles }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-xl-6">
+            <div class="dashboard-card card border-0">
+              <div class="card-body p-0">
+                <div class="table-card-header">
+                  <div>
+                    <h2 class="section-title mb-1">Stock par type</h2>
+                    <p class="section-subtitle mb-0">Volume et disponibilité</p>
+                  </div>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table table-modern mb-0">
+                    <thead>
+                      <tr>
+                        <th>Type</th>
+                        <th>Total</th>
+                        <th>Disponibles</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of overview.stockParType">
+                        <td><strong>{{ item.type }}</strong></td>
+                        <td>{{ item.total }}</td>
+                        <td>{{ item.disponibles }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-block fade-in-up">
+        <div class="dashboard-card card border-0">
+          <div class="card-body">
+            <div class="section-header mb-4 section-header--stack-mobile">
+              <div>
+                <h2 class="section-title">Activités récentes</h2>
+                <p class="section-subtitle">
+                  Filtre actif : {{ getActivityTypeLabel(selectedActivityFilter) }}
+                </p>
+              </div>
+
+              <div class="activity-filters">
+                <button
+                  type="button"
+                  class="activity-filters__btn"
+                  [class.active]="selectedActivityFilter === 'ALL'"
+                  (click)="onActivityFilterChange('ALL')">
+                  Toutes
+                </button>
+                <button
+                  type="button"
+                  class="activity-filters__btn"
+                  [class.active]="selectedActivityFilter === 'DEMANDE'"
+                  (click)="onActivityFilterChange('DEMANDE')">
+                  Demandes
+                </button>
+                <button
+                  type="button"
+                  class="activity-filters__btn"
+                  [class.active]="selectedActivityFilter === 'DÉLIVRANCE'"
+                  (click)="onActivityFilterChange('DÉLIVRANCE')">
+                  Délivrances
+                </button>
+                <button
+                  type="button"
+                  class="activity-filters__btn"
+                  [class.active]="selectedActivityFilter === 'TRANSFUSION'"
+                  (click)="onActivityFilterChange('TRANSFUSION')">
+                  Transfusions
                 </button>
               </div>
-            </mat-card-header>
-            <mat-card-content>
-              
-              @if (filteredActivities.length > 0) {
-                <div class="activities-list">
-                  @for (activity of getActivitiesToShow(); track activity.id) {
-                    <div class="activity-item">
-                      <div class="activity-icon">
-                        <mat-icon [color]="activity.color">{{ activity.icon }}</mat-icon>
-                      </div>
-                      <div class="activity-content">
-                        <div class="activity-title">
-                          {{ activity.title }}
-                        </div>
-                        <div class="activity-details">
-                          @if (activity.status) {
-                            <span class="badge" [ngClass]="getStatusClass(activity.status)">
-                              {{ getStatusText(activity.status) }}
-                            </span>
-                          }
-                          <span class="text-muted ms-2">{{ activity.details }}</span>
-                        </div>
-                      </div>
-                      <div class="activity-time">
-                        {{ formatDate(activity.originalData.dateHeureDemande || 
-                                      activity.originalData.dateHeureDelivrance || 
-                                      activity.originalData.dateTransfusion) }}
-                      </div>
-                    </div>
-                  }
-                </div>
-              } @else {
-                <div class="text-center py-4 text-muted">
-                  <mat-icon class="display-1 mb-3">history</mat-icon>
-                  <p>Aucune activité récente</p>
-                </div>
-              }
-              
-            </mat-card-content>
-          </mat-card>
-        </div>
+            </div>
 
-        <!-- Incidents transfusionnels -->
-        <div class="col-lg-4">
-          <mat-card>
-            <mat-card-header>
-              <mat-card-title>
-                <mat-icon class="me-2" color="warn">warning</mat-icon>
-                Incidents transfusionnels
-              </mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-              
-              <!-- Résumé des incidents -->
-              <div class="incidents-summary">
-                <div class="incident-stat">
-                  <div class="incident-number text-danger">{{ stats.incidents.total }}</div>
-                  <div class="incident-label">Total incidents</div>
+            <div *ngIf="filteredRecentActivities.length; else noActivities" class="activity-timeline">
+              <div
+                class="activity-item activity-item--animated"
+                *ngFor="let activity of filteredRecentActivities; trackBy: trackByActivity">
+                <div class="activity-item__icon">
+                  <i [class]="getActivityIcon(activity.type)"></i>
                 </div>
-                <div class="incident-stat">
-                  <div class="incident-number text-success">{{ stats.incidents.valides }}</div>
-                  <div class="incident-label">Validés</div>
-                </div>
-                <div class="incident-stat">
-                  <div class="incident-number text-warning">{{ stats.incidents.nonValides }}</div>
-                  <div class="incident-label">À valider</div>
+
+                <div class="activity-item__content">
+                  <div class="activity-item__top">
+                    <span [class]="getActivityBadgeClass(activity.type)">
+                      {{ activity.type }}
+                    </span>
+                    <span class="activity-item__date">
+                      {{ activity.dateHeure | date:'dd/MM/yyyy HH:mm' }}
+                    </span>
+                  </div>
+
+                  <h6 class="activity-item__title">{{ activity.titre }}</h6>
+                  <p class="activity-item__description">{{ activity.description }}</p>
+                  <div class="activity-item__status">Statut : {{ activity.statut }}</div>
                 </div>
               </div>
-              
-              <!-- Répartition par type -->
-              @if (stats.incidents.total > 0) {
-                <div class="incidents-by-type mt-4">
-                  <h6 class="mb-3">Répartition par type:</h6>
-                  @for (type of getIncidentsByType(); track type.name) {
-                    <div class="type-item mb-2">
-                      <div class="d-flex justify-content-between mb-1">
-                        <span>{{ type.name }}</span>
-                        <strong>{{ type.count }}</strong>
-                      </div>
-                      <mat-progress-bar 
-                        mode="determinate" 
-                        [value]="(type.count / stats.incidents.total) * 100"
-                        color="warn">
-                      </mat-progress-bar>
-                    </div>
-                  }
+            </div>
+
+            <ng-template #noActivities>
+              <div class="empty-state">
+                <div class="empty-state__icon">
+                  <i class="fas fa-clock-rotate-left"></i>
                 </div>
-              } @else {
-                <div class="text-center py-3 text-muted">
-                  <mat-icon class="mb-2">check_circle</mat-icon>
-                  <p>Aucun incident signalé</p>
+                <div class="empty-state__title">Aucune activité récente</div>
+                <div class="empty-state__text">
+                  Aucun événement ne correspond au filtre sélectionné.
                 </div>
-              }
-              
-              <!-- Bouton d'action -->
-              <button mat-raised-button color="warn" routerLink="/app/incidents" class="w-100 mt-4">
-                <mat-icon class="me-2">visibility</mat-icon>
-                Gérer les incidents
-              </button>
-              
-            </mat-card-content>
-          </mat-card>
+              </div>
+            </ng-template>
+          </div>
         </div>
-        
-      </div>
-    </div>
-  }
+      </section>
 
-  <!-- ============================================
-       BOUTON DE RAFRAÎCHISSEMENT FLOATING
-  ============================================ -->
-  <div class="refresh-fab">
-    <button mat-fab 
-            color="primary" 
-            (click)="refreshDashboard()" 
-            [disabled]="loading"
-            aria-label="Rafraîchir le tableau de bord"
-            matTooltip="Rafraîchir">
-      <mat-icon>{{ loading ? 'autorenew' : 'refresh' }}</mat-icon>
-    </button>
+    </ng-container>
   </div>
-
-</div>
+</section>

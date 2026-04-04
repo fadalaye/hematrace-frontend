@@ -13,6 +13,330 @@
 .form-check-input:checked {
   background-color: #198754;
   border-color: #198754;
+}// ==============================
+// Alertes
+// ==============================
+.alert-info {
+  background-color: #d1ecf1;
+  border-color: #bee5eb;
+  color: #0c5460;
+  border-radius: 10px;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  border-color: #ffeaa7;
+  color: #856404;
+  border-radius: 10px;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+  border-radius: 10px;
+}
+
+.alert-secondary {
+  background-color: #eef1f4;
+  border-color: #d6dce2;
+  color: #495057;
+  border-radius: 10px;
+}
+
+// ==============================
+// Checkbox
+// ==============================
+.form-check-input:checked {
+  background-color: #198754;
+  border-color: #198754;
+}
+
+// ==============================
+// Labels
+// ==============================
+.form-label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+  font-size: 0.92rem;
+}
+
+// ==============================
+// Champs de formulaire
+// ==============================
+.form-control,
+.form-select,
+select.form-control {
+  border-radius: 10px;
+  border: 1px solid #ced4da;
+  min-height: 44px;
+  transition: all 0.2s ease;
+
+  &:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.15);
+  }
+}
+
+textarea.form-control {
+  min-height: 90px;
+  resize: vertical;
+}
+
+// ==============================
+// Champs lecture seule
+// ==============================
+.readonly-field,
+input[readonly],
+select[disabled] {
+  background-color: #e9ecef !important;
+  cursor: not-allowed !important;
+  opacity: 1 !important;
+  border-left: 4px solid #6c757d !important;
+  color: #495057;
+}
+
+input:not([readonly]),
+textarea:not([readonly]),
+select:not([disabled]) {
+  border-left: 3px solid #0d6efd;
+}
+
+// ==============================
+// En-tête modal
+// ==============================
+.modal-header.bg-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  border-bottom: none;
+  padding: 1rem 1.25rem;
+
+  .modal-title {
+    color: white;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+
+    mat-icon {
+      color: white;
+    }
+  }
+}
+
+// ==============================
+// Footer modal
+// ==============================
+.modal-footer {
+  border-top: 1px solid #dee2e6;
+  padding: 1rem 1.25rem;
+
+  .btn,
+  button[mat-raised-button] {
+    min-height: 42px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+}
+
+// ==============================
+// Boutons
+// ==============================
+.btn-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  border-color: #dc3545;
+
+  &:hover {
+    background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+    border-color: #c82333;
+  }
+
+  &:disabled {
+    background: #dc3545;
+    opacity: 0.65;
+  }
+}
+
+// ==============================
+// Titres de section
+// ==============================
+.border-bottom {
+  border-color: #dee2e6 !important;
+}
+
+h6 {
+  color: #dc3545;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+
+  mat-icon {
+    vertical-align: middle;
+  }
+
+  &.text-success {
+    color: #198754;
+  }
+}
+
+// ==============================
+// Carte transfusion liée
+// ==============================
+.card {
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+  .card-header {
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    font-weight: 600;
+  }
+}
+
+.card.border-success {
+  border-left: 5px solid #198754;
+}
+
+.card.border-info {
+  border-left: 5px solid #0dcaf0;
+
+  .card-header.bg-info {
+    background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
+    color: white;
+  }
+}
+
+.card-body {
+  .fw-bold {
+    color: #343a40;
+  }
+}
+
+// ==============================
+// Badges
+// ==============================
+.badge {
+  font-size: 0.8rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 8px;
+
+  &.bg-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%) !important;
+  }
+
+  &.bg-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #5c636a 100%) !important;
+  }
+
+  &.bg-success {
+    background: linear-gradient(135deg, #198754 0%, #157347 100%) !important;
+  }
+
+  &.bg-warning {
+    color: #212529 !important;
+  }
+}
+
+// ==============================
+// Texte utilitaire
+// ==============================
+.text-muted {
+  font-size: 0.85rem;
+}
+
+.text-danger.small {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+// ==============================
+// Sélection / disabled
+// ==============================
+select.form-control {
+  option {
+    padding: 0.5rem;
+  }
+
+  &:disabled {
+    background-color: #e9ecef;
+    opacity: 1;
+  }
+}
+
+// ==============================
+// Spinner
+// ==============================
+.spinner-border.text-danger {
+  border-color: #dc3545 transparent #dc3545 transparent;
+}
+
+// ==============================
+// Bloc verrouillage en modification
+// ==============================
+.locked-section-note {
+  background: #f8f9fa;
+  border: 1px dashed #adb5bd;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  color: #495057;
+}
+
+.locked-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #6c757d;
+  color: white;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+}
+
+// ==============================
+// Validation erreurs bootstrap
+// ==============================
+.is-invalid {
+  border-color: #dc3545 !important;
+}
+
+.invalid-feedback {
+  font-size: 0.82rem;
+}
+
+// ==============================
+// Responsive
+// ==============================
+@media (max-width: 768px) {
+  .modal-body .row.g-4 > [class*="col-"] {
+    margin-bottom: 1rem;
+  }
+
+  .modal-header {
+    padding: 0.75rem 1rem;
+
+    .modal-title {
+      font-size: 1.05rem;
+      line-height: 1.35;
+    }
+  }
+
+  .card-body .row > [class*="col-"] {
+    margin-bottom: 0.5rem;
+  }
+
+  .form-label {
+    font-size: 0.88rem;
+  }
+
+  .badge {
+    font-size: 0.72rem;
+  }
+
+  textarea.form-control {
+    min-height: 75px;
+  }
 }
 
 // Amélioration visuelle des labels

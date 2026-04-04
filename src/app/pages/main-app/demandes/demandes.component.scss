@@ -1,80 +1,173 @@
-// demandes.component.scss
-.hover-row:hover {
-  background-color: #f8f9fa;
-  cursor: pointer;
+.kpi-card {
+  border: none;
+  border-left: 5px solid transparent;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
-.badge {
-  font-size: 0.75rem;
-  padding: 0.375rem 0.75rem;
+.kpi-label {
+  font-size: 0.85rem;
+  color: #6c757d;
 }
 
-.table-responsive {
-  max-height: 70vh;
+.kpi-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.kpi-primary { border-left-color: #0d6efd; }
+.kpi-warning { border-left-color: #ffc107; }
+.kpi-success { border-left-color: #198754; }
+.kpi-danger  { border-left-color: #dc3545; }
+.kpi-urgent  { border-left-color: #fd7e14; }
+.kpi-info    { border-left-color: #0dcaf0; }
+
+.demande-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1rem;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.demande-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+}
+
+.demande-card-urgent {
+  border-left: 5px solid #fd7e14;
+}
+
+.demande-card-attente {
+  border-left: 5px solid #ffc107;
+}
+
+.demande-card-validee {
+  border-left: 5px solid #198754;
+}
+
+.demande-card-rejetee {
+  border-left: 5px solid #dc3545;
+}
+
+.demande-card-default {
+  border-left: 5px solid #6c757d;
+}
+
+.demande-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.demande-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.demande-info-item .label {
+  font-size: 0.82rem;
+  color: #6c757d;
+  margin-bottom: 0.1rem;
+}
+
+.demande-info-item .value {
+  font-size: 0.95rem;
+  color: #212529;
+}
+
+.info-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  color: #495057;
+}
+
+.mini-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.kanban-wrapper {
+  overflow-x: auto;
+}
+
+.kanban-board {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  min-width: max-content;
+  padding-bottom: 0.5rem;
+}
+
+.kanban-column {
+  width: 340px;
+  min-width: 340px;
+  background: #f8f9fa;
+  border-radius: 16px;
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+}
+
+.kanban-column-header {
+  padding: 1rem;
+  border-bottom: 1px solid #e9ecef;
+  background: #ffffff;
+}
+
+.kanban-column-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-height: 75vh;
   overflow-y: auto;
 }
 
-// Styles pour les statuts
-.badge.bg-warning {
-  background-color: #ffc107 !important;
-  color: #212529 !important;
+.kanban-demande-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e9ecef;
+  padding: 0.9rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.badge.bg-success {
-  background-color: #198754 !important;
+.kanban-demande-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
 }
 
-.badge.bg-danger {
-  background-color: #dc3545 !important;
+.kanban-empty {
+  min-height: 120px;
+  border: 2px dashed #ced4da;
+  border-radius: 12px;
+  color: #6c757d;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
 }
 
-.badge.bg-primary {
-  background-color: #0d6efd !important;
+.kanban-attente .kanban-column-header {
+  border-top: 4px solid #ffc107;
 }
 
-// Responsive
-@media (max-width: 768px) {
-  .table-responsive {
-    font-size: 0.875rem;
-  }
-  
-  .btn-group .mat-icon-button {
-    width: 32px;
-    height: 32px;
-    line-height: 32px;
-    
-    .mat-icon {
-      font-size: 18px;
-    }
-  }
+.kanban-validee .kanban-column-header {
+  border-top: 4px solid #198754;
 }
 
-// Dans demandes.component.scss - AJOUTER ces styles
-
-// Styles pour la modale d'information
-.modal-header.bg-info {
-  background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
+.kanban-rejetee .kanban-column-header {
+  border-top: 4px solid #dc3545;
 }
 
-.card-header.bg-light {
-  background-color: #f8f9fa !important;
-  border-bottom: 1px solid #dee2e6;
-}
-
-// Amélioration visuelle des badges
-.badge.fs-6 {
-  font-size: 0.9rem !important;
-  padding: 0.5rem 0.75rem;
-}
-
-// Responsive
-@media (max-width: 768px) {
-  .modal-lg {
-    margin: 1rem;
-    max-width: calc(100% - 2rem);
-  }
-  
-  .card-body .row > div {
-    margin-bottom: 1rem;
-  }
+.hover-row:hover {
+  background-color: rgba(13, 110, 253, 0.04);
 }

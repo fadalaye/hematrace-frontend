@@ -5,73 +5,67 @@ import { Demande } from '../interfaces/demande.interface';
 import { environment } from '../../environments/environment';
 
 @Injectable({
-    providedIn: 'root'
+  providedIn: 'root'
 })
 export class DemandeService {
-    private apiUrl = `${environment.apiUrl}/demandes`;
+  private apiUrl = `${environment.apiUrl}/demandes`;
 
-    private httpOptions = {
-        headers: new HttpHeaders({
-            'Content-Type': 'application/json'
-        })
-    };
+  private httpOptions = {
+    headers: new HttpHeaders({
+      'Content-Type': 'application/json'
+    })
+  };
 
-    constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {}
 
-    getAll(): Observable<Demande[]> {
-        return this.http.get<Demande[]>(this.apiUrl);
-    }
+  getAll(): Observable<Demande[]> {
+    return this.http.get<Demande[]>(this.apiUrl);
+  }
 
-    getById(id: number): Observable<Demande> {
-        return this.http.get<Demande>(`${this.apiUrl}/${id}`);
-    }
+  getById(id: number): Observable<Demande> {
+    return this.http.get<Demande>(`${this.apiUrl}/${id}`);
+  }
 
-    create(demande: Demande): Observable<Demande> {
-        const demandeToSend = { ...demande };
-        delete demandeToSend.id;
-        
-        console.log('Envoi création demande:', demandeToSend);
-        return this.http.post<Demande>(this.apiUrl, demandeToSend, this.httpOptions);
-    }
+  create(demande: Demande): Observable<Demande> {
+    const demandeToSend = { ...demande };
+    delete demandeToSend.id;
 
-    update(id: number, demande: Demande): Observable<Demande> {
-        console.log('Envoi modification demande ID:', id, demande);
-        return this.http.put<Demande>(`${this.apiUrl}/${id}`, demande, this.httpOptions);
-    }
+    return this.http.post<Demande>(this.apiUrl, demandeToSend, this.httpOptions);
+  }
 
-    delete(id: number): Observable<void> {
-        return this.http.delete<void>(`${this.apiUrl}/${id}`);
-    }
+  update(id: number, demande: Demande): Observable<Demande> {
+    return this.http.put<Demande>(`${this.apiUrl}/${id}`, demande, this.httpOptions);
+  }
 
-    updateStatut(id: number, statut: string): Observable<void> {
-        return this.http.patch<void>(`${this.apiUrl}/${id}/statut?statut=${statut}`, {}, this.httpOptions);
-    }
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
 
-/*     validerDemande(id: number, personnelId: number): Observable<Demande> {
-        return this.http.patch<Demande>(`${this.apiUrl}/${id}/valider?personnelId=${personnelId}`, {}, this.httpOptions);
-    } */
+  updateStatut(id: number, statut: string): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}/statut/${encodeURIComponent(statut)}`, {}, this.httpOptions);
+  }
 
-    validerDemande(demandeId: number, personnelId: number): Observable<Demande> {
+  validerDemande(demandeId: number, personnelId: number): Observable<Demande> {
     return this.http.put<Demande>(
-        `${this.apiUrl}/${demandeId}/valider/${personnelId}`,  // Notez le changement
-        {}, 
-        this.httpOptions
-    )
-}
+      `${this.apiUrl}/${demandeId}/valider/${personnelId}`,
+      {},
+      this.httpOptions
+    );
+  }
 
-    annulerDemande(id: number): Observable<void> {
-        return this.http.patch<void>(`${this.apiUrl}/${id}/annuler`, {}, this.httpOptions);
-    }
+  annulerDemande(id: number): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/${id}/annuler`, {}, this.httpOptions);
+  }
 
-    getStatistiques(): Observable<any> {
-        return this.http.get<any>(`${this.apiUrl}/statistiques`);
-    }
+  getStatistiques(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/statistiques`);
+  }
 
-    getDemandesUrgentes(): Observable<Demande[]> {
-        return this.http.get<Demande[]>(`${this.apiUrl}/urgentes`);
-    }
+  getDemandesUrgentes(): Observable<Demande[]> {
+    return this.http.get<Demande[]>(`${this.apiUrl}/urgentes`);
+  }
 
-    getDemandesByStatut(statut: string): Observable<Demande[]> {
-        return this.http.get<Demande[]>(`${this.apiUrl}/statut/${statut}`);
-    }
+  getDemandesByStatut(statut: string): Observable<Demande[]> {
+    return this.http.get<Demande[]>(`${this.apiUrl}/statut/${encodeURIComponent(statut)}`);
+  }
 }

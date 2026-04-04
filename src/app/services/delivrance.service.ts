@@ -20,6 +20,13 @@ export interface ApiErrorResponse {
   code: string;
 }
 
+export interface ModifierDelivranceData {
+  produitIds: number[];
+  destination: string;
+  modeTransport: string;
+  observations?: string;
+}
+
 export interface VerificationResponse {
   success?: boolean;
   peutDelivrer: boolean;
@@ -782,4 +789,49 @@ creerDelivrance(request: CreerDelivranceData): Observable<Delivrance> {
       })
     );
   }
+
+  updateComplete(id: number, request: ModifierDelivranceData): Observable<Delivrance> {
+  console.log('🔄 Envoi modification complète délivrance ID:', id, request);
+
+  return this.http.put<any>(`${this.apiUrl}/${id}/complete`, request, this.httpOptions)
+    .pipe(
+      map(response => {
+        // gestion tolérante selon le format backend
+        let delivranceData: Delivrance;
+
+        if (response?.data) {
+          delivranceData = response.data;
+        } else if (response?.delivrance) {
+          delivranceData = response.delivrance;
+        } else if (response?.id) {
+          delivranceData = response;
+        } else {
+          throw new Error('Structure de réponse inattendue lors de la modification');
+        }
+
+        return this.formatDelivranceDate(delivranceData);
+      }),
+      catchError(error => {
+        console.error(`❌ Erreur modification complète délivrance ${id}:`, error);
+
+        let errorMessage = 'Erreur lors de la modification de la délivrance';
+
+        if (error.error) {
+          if (typeof error.error === 'string') {
+            errorMessage = error.error;
+          } else if (error.error.message) {
+            errorMessage = error.error.message;
+          } else if (error.error.erreur) {
+            errorMessage = error.error.erreur;
+          } else if (error.error.error) {
+            errorMessage = error.error.error;
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        return throwError(() => new Error(errorMessage));
+      })
+    );
+}
 }

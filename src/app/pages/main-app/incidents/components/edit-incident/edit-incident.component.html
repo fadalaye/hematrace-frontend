@@ -1,723 +1,446 @@
 <div class="modal-header bg-danger text-white">
-    <h5 class="modal-title">
-        <mat-icon class="me-2">{{ isEditMode ? 'edit' : 'add_alert' }}</mat-icon>
-        {{ isEditMode ? 'Modifier l\'Incident' : 'Déclarer un Incident' }}
-        <span *ngIf="isArretTransfusion" class="badge bg-warning ms-2">
-            Arrêt de transfusion
-        </span>
-    </h5>
+  <h5 class="modal-title">
+    <mat-icon class="me-2">{{ isEditMode ? 'edit' : 'add_alert' }}</mat-icon>
+    {{ isEditMode ? 'Modifier l\'Incident' : 'Déclarer un Incident' }}
+    <span *ngIf="isArretTransfusion" class="badge bg-warning ms-2">
+      Arrêt de transfusion
+    </span>
+    <span *ngIf="isEditMode" class="badge bg-secondary ms-2">
+      Mode modification
+    </span>
+  </h5>
 </div>
 
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
-    <div class="row g-4 mx-4">
-        
-        <!-- Section Informations Déclarant -->
-        <div class="col-12" *ngIf="currentUser">
-            <div class="alert alert-info">
-                <div class="d-flex align-items-center">
-                    <mat-icon class="me-2">badge</mat-icon>
-                    <div>
-                        <strong>Déclarant :</strong> 
-                        {{ getCurrentUserFullName() }}
-                        <small class="text-muted d-block">
-                            {{ getDefaultFonction() }} 
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Section Sélection de la transfusion (uniquement en création) -->
-        <div class="col-12" *ngIf="!isEditMode">
-            <h6 class="border-bottom pb-2">
-                <mat-icon class="me-2">bloodtype</mat-icon>
-                Sélection de la transfusion concernée
-                <span class="badge" [ngClass]="{
-                    'bg-success': isArretTransfusion,
-                    'bg-primary': !isArretTransfusion
-                }" style="font-size: 0.7em;">
-                    {{ isArretTransfusion ? 'Arrêt de transfusion' : 'Sélection standard' }}
-                </span>
-            </h6>
-            
-            <!-- Message spécial pour l'arrêt de transfusion -->
-            @if (isArretTransfusion) {
-                <div class="alert alert-warning mb-3">
-                    <div class="d-flex align-items-center">
-                        <mat-icon class="me-2">warning</mat-icon>
-                        <div>
-                            <strong>Arrêt de transfusion</strong><br>
-                            <small class="text-muted">
-                                Vous déclarez un incident suite à l'arrêt de la transfusion #{{ selectedTransfusion?.id }}.
-                                La sélection est verrouillée car vous venez d'arrêter cette transfusion.
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            } @else {
-                <div class="alert alert-light mb-3">
-                    <div class="d-flex align-items-center">
-                        <mat-icon class="me-2 text-info">info</mat-icon>
-                        <div class="small">
-                            <strong>Information :</strong> Sélectionnez une transfusion pour pré-remplir automatiquement 
-                            les informations du patient et du produit.
-                        </div>
-                    </div>
-                </div>
-            }
-            
-            <div class="form-group">
-                <label class="form-label">
-                    Transfusion concernée *
-                    @if (isArretTransfusion) {
-                        <span class="badge bg-success ms-2">Verrouillée</span>
-                    }
-                </label>
-                
-                <!-- Indicateur de chargement -->
-                <div *ngIf="loadingTransfusions && !isArretTransfusion" class="text-center py-3">
-                    <div class="spinner-border spinner-border-sm text-danger me-2" role="status">
-                        <span class="visually-hidden">Chargement...</span>
-                    </div>
-                    <span class="text-muted">Chargement des transfusions disponibles...</span>
-                </div>
-                
-                <!-- Affichage de la transfusion pour l'arrêt -->
-                @if (isArretTransfusion && selectedTransfusion) {
-                    <div class="card border-success">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="fw-bold">
-                                        #{{ selectedTransfusion.id }} - {{ selectedTransfusion.patientPrenom }} {{ selectedTransfusion.patientNom }}
-                                    </div>
-                                    <div class="small text-muted">
-                                        {{ formatDateForDisplay(selectedTransfusion.dateTransfusion) }} • 
-                                        @if (selectedTransfusion.produitSanguin) {
-                                            {{ selectedTransfusion.produitSanguin.typeProduit }}
-                                        }
-                                    </div>
-                                </div>
-                                <div class="d-flex gap-2">
-                                    <span class="badge bg-success">
-                                        <mat-icon class="me-1" style="font-size: 14px;">check_circle</mat-icon>
-                                        Sélectionnée
-                                    </span>
-                                    <span class="badge bg-info">
-                                        <mat-icon class="me-1" style="font-size: 14px;">lock</mat-icon>
-                                        Verrouillée
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Champ caché pour l'ID de transfusion -->
-                    <!-- <input type="hidden" [formControl]="form.get('transfusionId')"> -->
-                }
-                
-                <!-- Liste des transfusions pour sélection manuelle -->
-                @if (!isArretTransfusion) {
-                    <select class="form-control" formControlName="transfusionId" 
-                            [class.is-invalid]="form.get('transfusionId')?.invalid && form.get('transfusionId')?.touched"
-                            [disabled]="loadingTransfusions">
-                        <option value="">Sélectionner une transfusion...</option>
-                        <option *ngFor="let transfusion of transfusionsCompatibles" 
-                                [value]="transfusion.id"
-                                [attr.disabled]="transfusion.incidentTransfusionnel ? true : null">
-                            {{ getTransfusionDescription(transfusion) }}
-                            <span *ngIf="transfusion.produitSanguin">
-                                - {{ transfusion.produitSanguin.typeProduit }}
-                            </span>
-                            <span *ngIf="transfusion.incidentTransfusionnel" class="text-danger">
-                                (Déjà un incident déclaré)
-                            </span>
-                        </option>
-                    </select>
-                }
-                
-                <!-- Messages d'erreur -->
-                @if (!isArretTransfusion && form.get('transfusionId')?.invalid && form.get('transfusionId')?.touched) {
-                    <div class="invalid-feedback d-block">
-                        <mat-icon class="me-1" style="font-size: 14px;">error</mat-icon>
-                        La sélection d'une transfusion est obligatoire
-                    </div>
-                }
-                
-                @if (isArretTransfusion && form.get('transfusionId')?.invalid) {
-                    <div class="invalid-feedback d-block">
-                        <mat-icon class="me-1" style="font-size: 14px;">error</mat-icon>
-                        Erreur: La transfusion pour l'arrêt n'est pas spécifiée
-                    </div>
-                }
-                
-                <!-- Message si aucune transfusion disponible -->
-                @if (!isArretTransfusion && !loadingTransfusions && transfusionsCompatibles.length === 0) {
-                    <div class="alert alert-warning mt-3">
-                        <div class="d-flex align-items-center">
-                            <mat-icon class="me-2">warning</mat-icon>
-                            <div>
-                                <strong>Aucune transfusion disponible</strong><br>
-                                <small class="text-muted">
-                                    Toutes les transfusions ont déjà un incident déclaré ou aucune transfusion n'est enregistrée.
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
-
-        <!-- Section Affichage transfusion en mode édition -->
-        <div class="col-12" *ngIf="isEditMode && updateItem()?.transfusion">
-            <div class="alert alert-warning">
-                <div class="d-flex align-items-center">
-                    <mat-icon class="me-2">lock</mat-icon>
-                    <div>
-                        <strong>Transfusion associée :</strong> 
-                        {{ getTransfusionDescription(updateItem()!.transfusion!) }}
-                        <small class="text-muted d-block">
-                            La transfusion ne peut pas être modifiée pour un incident existant
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Section Détails de la transfusion sélectionnée -->
-        <div *ngIf="selectedTransfusion" class="col-12">
-            <div class="card border-success mb-4">
-                <div class="card-header bg-success text-white py-2">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0">
-                            <mat-icon class="me-2">check_circle</mat-icon>
-                            Transfusion sélectionnée
-                        </h6>
-                        <span class="badge bg-light text-success">
-                            #{{ selectedTransfusion.id }}
-                        </span>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <!-- Informations Patient -->
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <h6 class="border-bottom pb-2 mb-3 text-success">
-                                <mat-icon class="me-2">person</mat-icon>
-                                Informations Patient
-                            </h6>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-2">
-                                <strong>Nom complet :</strong><br>
-                                {{ selectedTransfusion.patientPrenom }} {{ selectedTransfusion.patientNom }}
-                            </div>
-                            <div class="mb-2">
-                                <strong>Date de naissance :</strong><br>
-                                {{ formatDateForDisplay(selectedTransfusion.patientDateNaissance) }}
-                                <span class="badge bg-info ms-2">
-                                    {{ calculateAge(selectedTransfusion.patientDateNaissance) }} ans
-                                </span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-2">
-                                <strong>N° Dossier :</strong><br>
-                                <span class="badge bg-secondary">{{ selectedTransfusion.patientNumDossier }}</span>
-                            </div>
-                            <div class="mb-2">
-                                <strong>Groupe sanguin :</strong><br>
-                                <span class="badge bg-danger">
-                                    <mat-icon class="me-1" style="font-size: 14px;">bloodtype</mat-icon>
-                                    {{ selectedTransfusion.groupeSanguinPatient || 'Non spécifié' }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Informations Transfusion -->
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <h6 class="border-bottom pb-2 mb-3 text-success">
-                                <mat-icon class="me-2">schedule</mat-icon>
-                                Informations Transfusion
-                            </h6>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-2">
-                                <strong>Date transfusion :</strong><br>
-                                {{ formatDateForDisplay(selectedTransfusion.dateTransfusion) }}
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-2">
-                                <strong>Heure début :</strong><br>
-                                {{ selectedTransfusion.heureDebut }}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Informations Produit -->
-                    <div *ngIf="selectedTransfusion.produitSanguin" class="row">
-                        <div class="col-12">
-                            <h6 class="border-bottom pb-2 mb-3 text-success">
-                                <mat-icon class="me-2">inventory</mat-icon>
-                                Produit Transfusé
-                            </h6>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-2">
-                                <strong>Type de produit :</strong><br>
-                                <span class="badge bg-primary">
-                                    {{ selectedTransfusion.produitSanguin.typeProduit || 'Non spécifié' }}
-                                </span>
-                            </div>
-                            <div class="mb-2">
-                                <strong>Code produit :</strong><br>
-                                <code>{{ selectedTransfusion.produitSanguin.codeProduit || 'N/A' }}</code>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-2">
-                                <strong>Groupe sanguin produit :</strong><br>
-                                {{ selectedTransfusion.produitSanguin.groupeSanguin || 'N/A' }}
-                            </div>
-                            <div class="mb-2">
-                                <strong>Volume :</strong><br>
-                                {{ selectedTransfusion.produitSanguin.volumeMl || 'N/A' }} ml
-                            </div>
-                        </div>
-                        <div class="col-12 mt-2">
-                            <div class="alert alert-light">
-                                <small class="text-muted">
-                                    <mat-icon class="me-1" style="font-size: 14px;">info</mat-icon>
-                                    Les informations produit sont pré-remplies automatiquement. 
-                                    Vous pouvez les modifier dans la section suivante si nécessaire.
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Section Informations Patient (formulaire) -->
-        <div class="col-12">
-            <h6 class="border-bottom pb-2">
-                <mat-icon class="me-2">personal_injury</mat-icon>
-                Informations Patient
-                @if (selectedTransfusion) {
-                    <span class="badge bg-success ms-2">
-                        <mat-icon class="me-1" style="font-size: 14px;">auto_awesome</mat-icon>
-                        Pré-remplissage activé
-                    </span>
-                }
-            </h6>
-        </div>
-
-        <div class="form-group col-xl-6 col-sm-6 col-12">
-            <label class="form-label">Nom Patient *</label>
-            <input type="text" class="form-control" 
-                   [class.is-invalid]="form.get('patientNom')?.invalid && form.get('patientNom')?.touched"
-                   formControlName="patientNom" 
-                   placeholder="DUPONT">
-            @if (form.get('patientNom')?.invalid && form.get('patientNom')?.touched) {
-                <div class="invalid-feedback d-block">
-                    <mat-icon class="me-1" style="font-size: 14px;">error</mat-icon>
-                    Le nom du patient est requis
-                </div>
-            }
-        </div>
-
-        <div class="form-group col-xl-6 col-sm-6 col-12">
-            <label class="form-label">Prénom Patient *</label>
-            <input type="text" class="form-control" 
-                   [class.is-invalid]="form.get('patientPrenom')?.invalid && form.get('patientPrenom')?.touched"
-                   formControlName="patientPrenom" 
-                   placeholder="Jean">
-            @if (form.get('patientPrenom')?.invalid && form.get('patientPrenom')?.touched) {
-                <div class="invalid-feedback d-block">
-                    <mat-icon class="me-1" style="font-size: 14px;">error</mat-icon>
-                    Le prénom du patient est requis
-                </div>
-            }
-        </div>
-
-        <div class="form-group col-xl-6 col-sm-6 col-12">
-            <label class="form-label">Date de Naissance *</label>
-            <input type="date" class="form-control" 
-                   [class.is-invalid]="form.get('patientDateNaissance')?.invalid && form.get('patientDateNaissance')?.touched"
-                   formControlName="patientDateNaissance">
-            @if (form.get('patientDateNaissance')?.invalid && form.get('patientDateNaissance')?.touched) {
-                <div class="invalid-feedback d-block">
-                    <mat-icon class="me-1" style="font-size: 14px;">error</mat-icon>
-                    La date de naissance est requise et doit être valide
-                </div>
-            }
-        </div>
-
-        <div class="form-group col-xl-6 col-sm-6 col-12">
-            <label class="form-label">Numéro Dossier *</label>
-            <input type="text" class="form-control" 
-                   [class.is-invalid]="form.get('patientNumDossier')?.invalid && form.get('patientNumDossier')?.touched"
-                   formControlName="patientNumDossier" 
-                   placeholder="2024-001234">
-            @if (form.get('patientNumDossier')?.invalid && form.get('patientNumDossier')?.touched) {
-                <div class="invalid-feedback d-block">
-                    <mat-icon class="me-1" style="font-size: 14px;">error</mat-icon>
-                    Le numéro de dossier est requis
-                </div>
-            }
-        </div>
-
-        <!-- Section Produit Transfusé -->
-        <div class="col-12 mt-4">
-            <h6 class="border-bottom pb-2">
-                <mat-icon class="me-2">inventory</mat-icon>
-                Produit Transfusé
-                @if (selectedTransfusion?.produitSanguin) {
-                    <span class="badge bg-info ms-2">
-                        <mat-icon class="me-1" style="font-size: 14px;">auto_fix_high</mat-icon>
-                        Auto-génération activée
-                    </span>
-                }
-            </h6>
-        </div>
-
-        <div class="form-group col-xl-6 col-sm-6 col-12">
-            <label class="form-label">Type de produit *</label>
-            <select class="form-control" 
-                    [class.is-invalid]="form.get('typeProduitTransfuse')?.invalid && form.get('typeProduitTransfuse')?.touched"
-                    formControlName="typeProduitTransfuse">
-                <option value="">Sélectionner un type...</option>
-                <option *ngFor="let option of typeProduitOptions" 
-                        [value]="option.value">
-                    {{ option.label }}
-                </option>
-            </select>
-            @if (form.get('typeProduitTransfuse')?.invalid && form.get('typeProduitTransfuse')?.touched) {
-                <div class="invalid-feedback d-block">
-                    <mat-icon class="me-1" style="font-size: 14px;">error</mat-icon>
-                    Le type de produit est requis
-                </div>
-            }
-        </div>
-
-        <div class="form-group col-xl-6 col-sm-6 col-12">
-            <label class="form-label">Numéro de lot *</label>
-            <div class="input-group">
-                <input type="text" class="form-control" 
-                       [class.is-invalid]="form.get('numeroLotProduit')?.invalid && form.get('numeroLotProduit')?.touched"
-                       formControlName="numeroLotProduit" 
-                       placeholder="LOT-XXXX-XXXXX">
-                <button type="button" class="btn btn-outline-secondary" 
-                        (click)="regenererNumeroLot()"
-                        [disabled]="!selectedTransfusion">
-                    <mat-icon>refresh</mat-icon>
-                    Générer
-                </button>
-            </div>
-            @if (form.get('numeroLotProduit')?.invalid && form.get('numeroLotProduit')?.touched) {
-                <div class="invalid-feedback d-block">
-                    <mat-icon class="me-1" style="font-size: 14px;">error</mat-icon>
-                    Le numéro de lot est requis
-                </div>
-            }
-            <small class="text-muted">
-                Le numéro de lot est généré automatiquement. Vous pouvez le modifier si nécessaire.
+  <div class="row g-4 mx-4 my-2">
+    <!-- Déclarant -->
+    <div class="col-12" *ngIf="currentUser">
+      <div class="alert alert-info">
+        <div class="d-flex align-items-center">
+          <mat-icon class="me-2">badge</mat-icon>
+          <div>
+            <strong>Déclarant :</strong>
+            {{ getCurrentUserFullName() }}
+            <small class="text-muted d-block">
+              {{ getDefaultFonction() }}
             </small>
+          </div>
         </div>
-
-        <div class="form-group col-xl-6 col-sm-6 col-12">
-            <label class="form-label">Date de péremption *</label>
-            <input type="date" class="form-control" 
-                   [class.is-invalid]="form.get('datePeremptionProduit')?.invalid && form.get('datePeremptionProduit')?.touched"
-                   formControlName="datePeremptionProduit">
-            @if (form.get('datePeremptionProduit')?.invalid && form.get('datePeremptionProduit')?.touched) {
-                <div class="invalid-feedback d-block">
-                    <mat-icon class="me-1" style="font-size: 14px;">error</mat-icon>
-                    La date de péremption est requise
-                </div>
-            }
-        </div>
-
-        <!-- Section Informations Incident -->
-        <div class="col-12 mt-4">
-            <h6 class="border-bottom pb-2">
-                <mat-icon class="me-2">warning</mat-icon>
-                Informations Incident
-            </h6>
-        </div>
-
-        <div class="form-group col-xl-6 col-sm-6 col-12">
-            <label class="form-label">Date de l'incident *</label>
-            <input type="date" class="form-control" 
-                   [class.is-invalid]="form.get('dateIncident')?.invalid && form.get('dateIncident')?.touched"
-                   formControlName="dateIncident">
-            @if (form.get('dateIncident')?.invalid && form.get('dateIncident')?.touched) {
-                <div class="invalid-feedback d-block">
-                    <mat-icon class="me-1" style="font-size: 14px;">error</mat-icon>
-                    La date de l'incident est requise
-                </div>
-            }
-        </div>
-
-        <div class="form-group col-xl-6 col-sm-6 col-12">
-            <label class="form-label">Heure de l'incident *</label>
-            <input type="text" class="form-control" 
-                   [class.is-invalid]="form.get('heureIncident')?.invalid && form.get('heureIncident')?.touched"
-                   formControlName="heureIncident" 
-                   placeholder="14:30 (format HH:mm)">
-            @if (form.get('heureIncident')?.invalid && form.get('heureIncident')?.touched) {
-                <div class="invalid-feedback d-block">
-                    <mat-icon class="me-1" style="font-size: 14px;">error</mat-icon>
-                    L'heure de l'incident est requise (format HH:mm)
-                </div>
-            }
-        </div>
-
-        <div class="form-group col-xl-6 col-sm-6 col-12">
-            <label class="form-label">Lieu de l'incident *</label>
-            <select class="form-control" 
-                    [class.is-invalid]="form.get('lieuIncident')?.invalid && form.get('lieuIncident')?.touched"
-                    formControlName="lieuIncident">
-                <option value="">Sélectionner un lieu...</option>
-                <option *ngFor="let lieu of lieuSuggestions" [value]="lieu">{{ lieu }}</option>
-                <option value="autre">Autre (préciser)</option>
-            </select>
-            @if (form.get('lieuIncident')?.invalid && form.get('lieuIncident')?.touched) {
-                <div class="invalid-feedback d-block">
-                    <mat-icon class="me-1" style="font-size: 14px;">error</mat-icon>
-                    Le lieu de l'incident est requis
-                </div>
-            }
-        </div>
-
-        <div class="form-group col-xl-6 col-sm-6 col-12" *ngIf="form.get('lieuIncident')?.value === 'autre'">
-            <label class="form-label">Précisez le lieu *</label>
-            <input type="text" class="form-control" 
-                   placeholder="Précisez le lieu exact de l'incident...">
-        </div>
-
-        <!-- Section Description de l'incident -->
-        <div class="col-12 mt-4">
-            <h6 class="border-bottom pb-2">
-                <mat-icon class="me-2">description</mat-icon>
-                Description de l'Incident
-            </h6>
-        </div>
-
-        <div class="form-group col-12">
-            <label class="form-label">Description détaillée de l'incident</label>
-            <textarea class="form-control" 
-                      rows="4"
-                      formControlName="descriptionIncident" 
-                      placeholder="Décrivez l'incident de manière détaillée (circonstances, déroulement, personnes impliquées...)"
-                      [class.is-invalid]="form.get('descriptionIncident')?.invalid && form.get('descriptionIncident')?.touched"></textarea>
-            <small class="text-muted">
-                Décrivez précisément ce qui s'est passé, quand et comment.
-            </small>
-        </div>
-
-        <div class="form-group col-xl-6 col-sm-6 col-12">
-            <label class="form-label">Signes observés</label>
-            <textarea class="form-control" 
-                      rows="3"
-                      formControlName="signes" 
-                      placeholder="Signes cliniques observés (fièvre, frissons, urticaire, dyspnée...)"
-                      [class.is-invalid]="form.get('signes')?.invalid && form.get('signes')?.touched"></textarea>
-        </div>
-
-        <div class="form-group col-xl-6 col-sm-6 col-12">
-            <label class="form-label">Symptômes rapportés</label>
-            <textarea class="form-control" 
-                      rows="3"
-                      formControlName="symptomes" 
-                      placeholder="Symptômes rapportés par le patient (douleur, malaise, nausées...)"
-                      [class.is-invalid]="form.get('symptomes')?.invalid && form.get('symptomes')?.touched"></textarea>
-        </div>
-
-        <div class="form-group col-12">
-            <label class="form-label">Actions immédiates mises en œuvre</label>
-            <textarea class="form-control" 
-                      rows="3"
-                      formControlName="actionsImmediates" 
-                      placeholder="Actions prises immédiatement après l'incident (arrêt transfusion, traitement administré, appel médecin...)"
-                      [class.is-invalid]="form.get('actionsImmediates')?.invalid && form.get('actionsImmediates')?.touched"></textarea>
-        </div>
-
-        <!-- Section Informations Déclarant -->
-        <div class="col-12 mt-4">
-            <h6 class="border-bottom pb-2">
-                <mat-icon class="me-2">badge</mat-icon>
-                Informations Déclarant
-            </h6>
-        </div>
-
-        <div class="form-group col-xl-6 col-sm-6 col-12">
-            <label class="form-label">Nom du déclarant *</label>
-            <input type="text" class="form-control" 
-                   [class.is-invalid]="form.get('nomDeclarant')?.invalid && form.get('nomDeclarant')?.touched"
-                   formControlName="nomDeclarant" 
-                   placeholder="MARTIN">
-            @if (form.get('nomDeclarant')?.invalid && form.get('nomDeclarant')?.touched) {
-                <div class="invalid-feedback d-block">
-                    <mat-icon class="me-1" style="font-size: 14px;">error</mat-icon>
-                    Le nom du déclarant est requis
-                </div>
-            }
-        </div>
-
-        <div class="form-group col-xl-6 col-sm-6 col-12">
-            <label class="form-label">Fonction du déclarant *</label>
-            <input type="text" class="form-control" 
-                   [class.is-invalid]="form.get('fonctionDeclarant')?.invalid && form.get('fonctionDeclarant')?.touched"
-                   formControlName="fonctionDeclarant" 
-                   placeholder="Infirmier(e), Médecin...">
-            @if (form.get('fonctionDeclarant')?.invalid && form.get('fonctionDeclarant')?.touched) {
-                <div class="invalid-feedback d-block">
-                    <mat-icon class="me-1" style="font-size: 14px;">error</mat-icon>
-                    La fonction du déclarant est requise
-                </div>
-            }
-        </div>
-
-        <div class="form-group col-12">
-            <label class="form-label">Personnes informées</label>
-            <textarea class="form-control" 
-                      rows="2"
-                      formControlName="personnesInformees" 
-                      placeholder="Noms des personnes informées (médecin traitant, responsable qualité, pharmacien...)"
-                      [class.is-invalid]="form.get('personnesInformees')?.invalid && form.get('personnesInformees')?.touched"></textarea>
-            <small class="text-muted">
-                Indiquez les personnes qui ont été informées de l'incident.
-            </small>
-        </div>
-
-        <div class="form-group col-12">
-            <label class="form-label">Référence registre d'hémovigilance</label>
-            <input type="text" class="form-control" 
-                   formControlName="registreHemovigilance" 
-                   placeholder="Référence dans le registre d'hémovigilance">
-            <small class="text-muted">
-                Référence d'enregistrement dans le registre d'hémovigilance (optionnel).
-            </small>
-        </div>
-
-        <!-- Section Informations Complémentaires (pour la validation) -->
-        @if (isEditMode) {
-            <div class="col-12 mt-4">
-                <h6 class="border-bottom pb-2 text-success">
-                    <mat-icon class="me-2">verified</mat-icon>
-                    Informations Complémentaires (Validation)
-                </h6>
-                
-                <div class="alert alert-success">
-                    <div class="d-flex align-items-center">
-                        <mat-icon class="me-2">info</mat-icon>
-                        <div class="small">
-                            Cette section est visible uniquement pour la modification d'un incident existant.
-                            Remplissez ces champs pour compléter l'analyse de l'incident.
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
-
-        @if (isEditMode) {
-            <div class="form-group col-12">
-                <label class="form-label">Analyse préliminaire</label>
-                <textarea class="form-control" 
-                          rows="4"
-                          formControlName="analysePreliminaire" 
-                          placeholder="Analyse préliminaire de l'incident (causes possibles, investigations à mener...)"
-                          [class.is-invalid]="form.get('analysePreliminaire')?.invalid && form.get('analysePreliminaire')?.touched"></textarea>
-            </div>
-        }
-
-        @if (isEditMode) {
-            <div class="form-group col-12">
-                <label class="form-label">Actions correctives proposées</label>
-                <textarea class="form-control" 
-                          rows="4"
-                          formControlName="actionsCorrectives" 
-                          placeholder="Actions correctives à mettre en place pour éviter la récidive"
-                          [class.is-invalid]="form.get('actionsCorrectives')?.invalid && form.get('actionsCorrectives')?.touched"></textarea>
-            </div>
-        }
-
-        <!-- Section Signature -->
-        <div class="col-12 mt-4">
-            <h6 class="border-bottom pb-2">
-                <mat-icon class="me-2">edit</mat-icon>
-                Signature
-            </h6>
-        </div>
-
-        <div class="form-group col-12">
-            <label class="form-label">Signature du déclarant</label>
-            <input type="text" class="form-control" 
-                   formControlName="signatureDeclarant" 
-                   placeholder="Signature du déclarant">
-            <small class="text-muted">
-                Signature du déclarant. Si vide, sera automatiquement remplie avec votre nom.
-            </small>
-        </div>
-
-        <!-- Section Debug (optionnelle) -->
-        <div class="col-12" *ngIf="!isEditMode">
-            <div class="alert alert-info small">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>Debug Info:</strong><br>
-                        <span class="me-3">Form valide: {{ form.valid ? '✅' : '❌' }}</span>
-                        <span class="me-3">transfusionId: {{ form.get('transfusionId')?.value || 'N/A' }}</span>
-                        <span>Mode: {{ isArretTransfusion ? 'Arrêt transfusion' : 'Standard' }}</span>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-outline-info" 
-                            (click)="debugFormState()">
-                        <mat-icon>bug_report</mat-icon> Debug
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pied de page -->
-        <div class="modal-footer mt-4">
-            <div class="w-100">
-                <!-- Messages de validation -->
-                @if (form.invalid && form.touched) {
-                    <div class="alert alert-danger mb-3">
-                        <div class="d-flex align-items-center">
-                            <mat-icon class="me-2">error</mat-icon>
-                            <div>
-                                <strong>Formulaire incomplet</strong><br>
-                                <small>Veuillez remplir tous les champs obligatoires (*) avant de soumettre.</small>
-                            </div>
-                        </div>
-                    </div>
-                }
-                
-                <!-- Boutons d'action -->
-                <div class="d-flex justify-content-between">
-                    <button type="button" class="btn btn-secondary" (click)="cancel()">
-                        <mat-icon class="me-1">close</mat-icon>
-                        Annuler
-                    </button>
-                    
-                    <button type="submit" class="btn btn-danger" 
-                            [disabled]="form.invalid || loadingTransfusions"
-                            (click)="debugFormState()">
-                        <mat-icon class="me-1">{{ isEditMode ? 'save' : 'add_alert' }}</mat-icon>
-                        {{ isArretTransfusion ? 'Déclarer (Arrêt transfusion)' : (isEditMode ? 'Modifier' : 'Déclarer') }} l'Incident
-                        @if (loadingTransfusions) {
-                            <span class="ms-2">
-                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                            </span>
-                        }
-                    </button>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
+
+    <!-- Sélection transfusion : création -->
+    <div class="col-12" *ngIf="!isEditMode">
+      <h6 class="border-bottom pb-2">
+        <mat-icon class="me-2">bloodtype</mat-icon>
+        Sélection de la transfusion concernée
+        <span class="badge"
+          [ngClass]="{
+            'bg-success': isArretTransfusion,
+            'bg-primary': !isArretTransfusion
+          }"
+          style="font-size: 0.7em;">
+          {{ isArretTransfusion ? 'Arrêt de transfusion' : 'Sélection standard' }}
+        </span>
+      </h6>
+
+      @if (isArretTransfusion) {
+        <div class="alert alert-warning mb-3">
+          <div class="d-flex align-items-center">
+            <mat-icon class="me-2">warning</mat-icon>
+            <div>
+              <strong>Arrêt de transfusion</strong><br>
+              <small class="text-muted">
+                Vous déclarez un incident suite à l'arrêt de la transfusion #{{ selectedTransfusion?.id }}.
+                La sélection est verrouillée car vous venez d'arrêter cette transfusion.
+              </small>
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="alert alert-light mb-3">
+          <div class="d-flex align-items-center">
+            <mat-icon class="me-2 text-info">info</mat-icon>
+            <div class="small">
+              <strong>Information :</strong> Sélectionnez une transfusion pour pré-remplir automatiquement
+              les informations du patient et du produit.
+            </div>
+          </div>
+        </div>
+      }
+
+      <div class="form-group">
+        <label class="form-label">
+          Transfusion concernée *
+          @if (isArretTransfusion) {
+            <span class="badge bg-success ms-2">Verrouillée</span>
+          }
+        </label>
+
+        <div *ngIf="loadingTransfusions && !isArretTransfusion" class="text-center py-3">
+          <div class="spinner-border spinner-border-sm text-danger me-2" role="status"></div>
+          <span class="text-muted">Chargement des transfusions disponibles...</span>
+        </div>
+
+        @if (isArretTransfusion && selectedTransfusion) {
+          <div class="card border-success">
+            <div class="card-body">
+              <div class="d-flex align-items-center justify-content-between">
+                <div>
+                  <div class="fw-bold">
+                    #{{ selectedTransfusion.id }} - {{ selectedTransfusion.patientPrenom }} {{ selectedTransfusion.patientNom }}
+                  </div>
+                  <div class="small text-muted">
+                    {{ formatDateForDisplay(selectedTransfusion.dateTransfusion) }} •
+                    @if (selectedTransfusion.produitSanguin) {
+                      {{ selectedTransfusion.produitSanguin.typeProduit }}
+                    }
+                  </div>
+                </div>
+                <div class="d-flex gap-2">
+                  <span class="badge bg-success">
+                    <mat-icon class="me-1" style="font-size: 14px;">check_circle</mat-icon>
+                    Sélectionnée
+                  </span>
+                  <span class="badge bg-info">
+                    <mat-icon class="me-1" style="font-size: 14px;">lock</mat-icon>
+                    Verrouillée
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (!isArretTransfusion) {
+          <select
+            class="form-control"
+            formControlName="transfusionId"
+            [class.is-invalid]="form.get('transfusionId')?.invalid && form.get('transfusionId')?.touched"
+            [disabled]="loadingTransfusions">
+            <option value="">Sélectionner une transfusion...</option>
+            <option
+              *ngFor="let transfusion of transfusionsCompatibles"
+              [value]="transfusion.id"
+              [attr.disabled]="transfusion.incidentTransfusionnel ? true : null">
+              {{ getTransfusionDescription(transfusion) }}
+              <span *ngIf="transfusion.produitSanguin">
+                - {{ transfusion.produitSanguin.typeProduit }}
+              </span>
+            </option>
+          </select>
+        }
+
+        @if (!isArretTransfusion && form.get('transfusionId')?.invalid && form.get('transfusionId')?.touched) {
+          <div class="invalid-feedback d-block">
+            <mat-icon class="me-1" style="font-size: 14px;">error</mat-icon>
+            La sélection d'une transfusion est obligatoire
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Transfusion associée : modification -->
+    <div class="col-12" *ngIf="isEditMode && updateItem()?.transfusion">
+      <div class="alert alert-warning">
+        <div class="d-flex align-items-center">
+          <mat-icon class="me-2">lock</mat-icon>
+          <div>
+            <strong>Transfusion associée :</strong>
+            {{ getTransfusionDescription(updateItem()!.transfusion!) }}
+            <small class="text-muted d-block">
+              La transfusion et les données structurelles dérivées ne peuvent pas être modifiées pour un incident existant.
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Détails transfusion -->
+    <div *ngIf="selectedTransfusion" class="col-12">
+      <div class="card border-success mb-4">
+        <div class="card-header bg-success text-white py-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+              <mat-icon class="me-2">check_circle</mat-icon>
+              Transfusion sélectionnée
+            </h6>
+            <span class="badge bg-light text-success">#{{ selectedTransfusion.id }}</span>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-12">
+              <h6 class="border-bottom pb-2 mb-3 text-success">
+                <mat-icon class="me-2">person</mat-icon>
+                Informations Patient
+              </h6>
+            </div>
+
+            <div class="col-md-3">
+              <div class="fw-bold">Nom</div>
+              <div>{{ selectedTransfusion.patientNom }}</div>
+            </div>
+            <div class="col-md-3">
+              <div class="fw-bold">Prénom</div>
+              <div>{{ selectedTransfusion.patientPrenom }}</div>
+            </div>
+            <div class="col-md-3">
+              <div class="fw-bold">Dossier</div>
+              <div>{{ selectedTransfusion.patientNumDossier }}</div>
+            </div>
+            <div class="col-md-3">
+              <div class="fw-bold">Groupe</div>
+              <div>{{ selectedTransfusion.groupeSanguinPatient }}</div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-12">
+              <h6 class="border-bottom pb-2 mb-3 text-success">
+                <mat-icon class="me-2">inventory_2</mat-icon>
+                Produit transfusé
+              </h6>
+            </div>
+
+            <div class="col-md-3">
+              <div class="fw-bold">Type produit</div>
+              <div>{{ selectedTransfusion.produitSanguin?.typeProduit || 'N/A' }}</div>
+            </div>
+            <div class="col-md-3">
+              <div class="fw-bold">Code produit</div>
+              <div>{{ selectedTransfusion.produitSanguin?.codeProduit || 'N/A' }}</div>
+            </div>
+            <div class="col-md-3">
+              <div class="fw-bold">Date transfusion</div>
+              <div>{{ formatDateForDisplay(selectedTransfusion.dateTransfusion) }}</div>
+            </div>
+            <div class="col-md-3">
+              <div class="fw-bold">Tolérance</div>
+              <div>{{ selectedTransfusion.tolerance || 'N/A' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alerte lecture seule -->
+    <div class="col-12" *ngIf="isEditMode">
+      <div class="alert alert-secondary">
+        <div class="d-flex align-items-center">
+          <mat-icon class="me-2">lock</mat-icon>
+          <div>
+            <strong>Champs verrouillés :</strong>
+            les informations patient et produit proviennent de la transfusion et sont en lecture seule.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bloc patient -->
+    <div class="col-12">
+      <h6 class="border-bottom pb-2">
+        <mat-icon class="me-2">person</mat-icon>
+        Informations patient
+      </h6>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Nom du patient *</label>
+      <input
+        type="text"
+        class="form-control"
+        formControlName="patientNom"
+        [readonly]="isFieldReadOnly('patientNom')"
+        [class.readonly-field]="isFieldReadOnly('patientNom')">
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Prénom du patient *</label>
+      <input
+        type="text"
+        class="form-control"
+        formControlName="patientPrenom"
+        [readonly]="isFieldReadOnly('patientPrenom')"
+        [class.readonly-field]="isFieldReadOnly('patientPrenom')">
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Date de naissance *</label>
+      <input
+        type="date"
+        class="form-control"
+        formControlName="patientDateNaissance"
+        [readonly]="isFieldReadOnly('patientDateNaissance')"
+        [class.readonly-field]="isFieldReadOnly('patientDateNaissance')">
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">N° dossier *</label>
+      <input
+        type="text"
+        class="form-control"
+        formControlName="patientNumDossier"
+        [readonly]="isFieldReadOnly('patientNumDossier')"
+        [class.readonly-field]="isFieldReadOnly('patientNumDossier')">
+    </div>
+
+    <!-- Bloc incident -->
+    <div class="col-12 mt-2">
+      <h6 class="border-bottom pb-2">
+        <mat-icon class="me-2">warning</mat-icon>
+        Informations incident
+      </h6>
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Date incident *</label>
+      <input type="date" class="form-control" formControlName="dateIncident">
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Heure incident *</label>
+      <input type="time" class="form-control" formControlName="heureIncident">
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Lieu incident *</label>
+      <select class="form-control" formControlName="lieuIncident">
+        <option *ngFor="let lieu of lieuSuggestions" [value]="lieu">{{ lieu }}</option>
+      </select>
+    </div>
+
+    <!-- Bloc produit -->
+    <div class="col-12 mt-2">
+      <h6 class="border-bottom pb-2">
+        <mat-icon class="me-2">inventory_2</mat-icon>
+        Informations produit
+      </h6>
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Type produit transfusé *</label>
+      <select
+        class="form-control"
+        formControlName="typeProduitTransfuse"
+        [disabled]="isFieldReadOnly('typeProduitTransfuse')"
+        [class.readonly-field]="isFieldReadOnly('typeProduitTransfuse')">
+        <option *ngFor="let option of typeProduitOptions" [value]="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Numéro lot / produit *</label>
+      <input
+        type="text"
+        class="form-control"
+        formControlName="numeroLotProduit"
+        [readonly]="isFieldReadOnly('numeroLotProduit')"
+        [class.readonly-field]="isFieldReadOnly('numeroLotProduit')">
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Date péremption produit *</label>
+      <input
+        type="date"
+        class="form-control"
+        formControlName="datePeremptionProduit"
+        [readonly]="isFieldReadOnly('datePeremptionProduit')"
+        [class.readonly-field]="isFieldReadOnly('datePeremptionProduit')">
+    </div>
+
+    <!-- Description clinique -->
+    <div class="col-12 mt-2">
+      <h6 class="border-bottom pb-2">
+        <mat-icon class="me-2">medical_information</mat-icon>
+        Manifestations cliniques
+      </h6>
+    </div>
+
+    <div class="col-md-12">
+      <label class="form-label">Description de l'incident</label>
+      <textarea class="form-control" rows="3" formControlName="descriptionIncident"></textarea>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Signes observés</label>
+      <textarea class="form-control" rows="2" formControlName="signes"></textarea>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Symptômes</label>
+      <textarea class="form-control" rows="2" formControlName="symptomes"></textarea>
+    </div>
+
+    <div class="col-md-12">
+      <label class="form-label">Actions immédiates</label>
+      <textarea class="form-control" rows="2" formControlName="actionsImmediates"></textarea>
+    </div>
+
+    <!-- Hémovigilance -->
+    <div class="col-12 mt-2">
+      <h6 class="border-bottom pb-2">
+        <mat-icon class="me-2">fact_check</mat-icon>
+        Analyse et hémovigilance
+      </h6>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Personnes informées</label>
+      <textarea class="form-control" rows="2" formControlName="personnesInformees"></textarea>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Registre d'hémovigilance</label>
+      <input type="text" class="form-control" formControlName="registreHemovigilance">
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Analyse préliminaire</label>
+      <textarea class="form-control" rows="3" formControlName="analysePreliminaire"></textarea>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Actions correctives</label>
+      <textarea class="form-control" rows="3" formControlName="actionsCorrectives"></textarea>
+    </div>
+
+    <!-- Déclarant -->
+    <div class="col-12 mt-2">
+      <h6 class="border-bottom pb-2">
+        <mat-icon class="me-2">badge</mat-icon>
+        Informations déclarant
+      </h6>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Nom déclarant *</label>
+      <input type="text" class="form-control" formControlName="nomDeclarant">
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Fonction déclarant *</label>
+      <input type="text" class="form-control" formControlName="fonctionDeclarant">
+    </div>
+
+    <div class="col-md-12">
+      <label class="form-label">Signature déclarant</label>
+      <input type="text" class="form-control" formControlName="signatureDeclarant">
+    </div>
+  </div>
+
+  <div class="modal-footer mt-4">
+    <button type="button" class="btn btn-secondary" (click)="cancel()">
+      <mat-icon class="me-1">close</mat-icon>
+      Annuler
+    </button>
+
+    <button mat-raised-button color="primary" type="submit">
+      <mat-icon>{{ isEditMode ? 'save' : 'add' }}</mat-icon>
+      {{ isEditMode ? 'Mettre à jour' : 'Déclarer' }}
+    </button>
+  </div>
 </form>

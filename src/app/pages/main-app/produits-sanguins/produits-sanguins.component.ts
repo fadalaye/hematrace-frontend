@@ -107,6 +107,8 @@ export class ProduitsSanguinsComponent implements OnInit, AfterViewInit {
     'actions'
   ];
   dataSource = new MatTableDataSource<ProduitSanguin>([]);
+
+  viewMode: 'table' | 'cards' | 'kanban' = 'table';
   
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -637,4 +639,69 @@ export class ProduitsSanguinsComponent implements OnInit, AfterViewInit {
     };
     return types[this.selectedType()] || 'Tous les types';
   }
+
+setViewMode(mode: 'table' | 'cards' | 'kanban'): void {
+  this.viewMode = mode;
+}
+
+getProduitsAffiches() {
+  return this.dataSource.filteredData?.length ? this.dataSource.filteredData : this.dataSource.data;
+}
+
+getEtatCardClass(etat: string | undefined): string {
+  switch ((etat || '').toUpperCase()) {
+    case 'DISPONIBLE':
+      return 'etat-disponible';
+    case 'DÉLIVRÉ':
+      return 'etat-delivre';
+    case 'UTILISÉ':
+      return 'etat-utilise';
+    case 'RETOURNÉ':
+      return 'etat-retourne';
+    default:
+      return 'etat-default';
+  }
+}
+
+getProduitsByEtat(etat: string) {
+  return this.getProduitsAffiches().filter(
+    produit => (produit.etat || '').toUpperCase() === etat.toUpperCase()
+  );
+}
+
+getAutresProduits() {
+  const etatsConnus = ['DISPONIBLE', 'DÉLIVRÉ', 'UTILISÉ', 'RETOURNÉ'];
+  return this.getProduitsAffiches().filter(
+    produit => !etatsConnus.includes((produit.etat || '').toUpperCase())
+  );
+}
+
+getKanbanColumns() {
+  return [
+    {
+      key: 'DISPONIBLE',
+      title: 'Disponibles',
+      icon: 'inventory',
+      className: 'kanban-disponible'
+    },
+    {
+      key: 'DÉLIVRÉ',
+      title: 'Délivrés',
+      icon: 'local_shipping',
+      className: 'kanban-delivre'
+    },
+    {
+      key: 'UTILISÉ',
+      title: 'Utilisés',
+      icon: 'vaccines',
+      className: 'kanban-utilise'
+    },
+    {
+      key: 'RETOURNÉ',
+      title: 'Retournés',
+      icon: 'undo',
+      className: 'kanban-retourne'
+    }
+  ];
+}
 }
