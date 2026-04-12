@@ -13,6 +13,12 @@ export const routes: Routes = [
     path: 'unauthorized', 
     component: UnauthorizedComponent
   },
+    {
+    path: 'activer-compte',
+    loadComponent: () =>
+      import('./pages/main-app/activer-compte/activer-compte.component')
+        .then(m => m.ActiverCompteComponent)
+  },
   
   // Redirection racine
   {

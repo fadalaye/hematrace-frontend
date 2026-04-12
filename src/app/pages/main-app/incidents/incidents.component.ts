@@ -33,7 +33,8 @@ import {
   StatistiquesIncident
 } from '../../../services/Incident-transfusionnel.service';
 import { EditIncidentComponent } from './components/edit-incident/edit-incident.component';
-import { AuthService, getUserType } from '../../../services/auth.service';
+import { AuthService } from '../../../services/auth.service';
+import { getUserType } from '../../../interfaces/any-utilisateur.interface';
 import { RouterOutlet } from '@angular/router';
 
 interface StatutOption {

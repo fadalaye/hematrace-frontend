@@ -49,14 +49,16 @@ export class EditPersonnelComponent implements OnInit {
       dateNaissance: ['', Validators.required],
       adresse: ['', Validators.maxLength(200)],
       dateEmbauche: [''],
-      motDePasse: [this.utilisateur ? '' : ['', [Validators.required, Validators.minLength(6)]]],
+      motDePasse: [''],
       statut: ['ACTIF', Validators.required],
       fonction: ['', Validators.required]
     });
 
-    // Validation conditionnelle du mot de passe en mode édition
+
     if (this.utilisateur) {
-      this.form.get('motDePasse')?.setValidators([Validators.minLength(6)]);
+      this.form.get('motDePasse')?.setValidators([Validators.minLength(8)]);
+    } else {
+      this.form.get('motDePasse')?.clearValidators(); // création → ignoré
     }
   }
 
@@ -92,9 +94,9 @@ export class EditPersonnelComponent implements OnInit {
       };
 
       // Gestion du mot de passe
-      if (!personnelData.motDePasse) {
-        delete personnelData.motDePasse;
-      }
+    if (!personnelData.motDePasse || personnelData.motDePasse.trim() === '') {
+      delete personnelData.motDePasse;
+    }
 
       // Formatage des dates
       if (personnelData.dateNaissance) {

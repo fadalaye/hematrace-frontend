@@ -50,15 +50,16 @@ export class EditChefServiceComponent implements OnInit {
       dateNaissance: ['', Validators.required],
       adresse: ['', Validators.maxLength(200)],
       dateEmbauche: [''],
-      motDePasse: [this.utilisateur ? '' : ['', [Validators.required, Validators.minLength(6)]]],
+      motDePasse: [''],
       statut: ['ACTIF', Validators.required],
       serviceDirige: ['', Validators.required],
       departement: ['', Validators.required]
     });
 
-    // Validation conditionnelle du mot de passe en mode édition
     if (this.utilisateur) {
-      this.form.get('motDePasse')?.setValidators([Validators.minLength(6)]);
+      this.form.get('motDePasse')?.setValidators([Validators.minLength(8)]);
+    } else {
+      this.form.get('motDePasse')?.clearValidators(); // création → ignoré
     }
   }
 
@@ -94,7 +95,7 @@ export class EditChefServiceComponent implements OnInit {
       };
 
       // Gestion du mot de passe
-      if (!chefServiceData.motDePasse) {
+      if (!chefServiceData.motDePasse || chefServiceData.motDePasse.trim() === '') {
         delete chefServiceData.motDePasse;
       }
 

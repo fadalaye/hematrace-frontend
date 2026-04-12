@@ -1,4 +1,3 @@
-// components/utilisateurs/utilisateurs.component.ts
 import { Component, inject, signal, ViewChild, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
@@ -16,16 +15,22 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ModalModule, BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
-// Interfaces et services
-import { AnyUtilisateur, getUserType, getUserTypeLabel, isMedecin, isPersonnel, isChefService, isAdmin } from '../../../interfaces/any-utilisateur.interface';
+import {
+  AnyUtilisateur,
+  getUserType,
+  getUserTypeLabel,
+  isMedecin,
+  isPersonnel,
+  isChefService,
+  isAdmin
+} from '../../../interfaces/any-utilisateur.interface';
 import { UtilisateurService } from '../../../services/utilisateur.service';
 
-// Composants d'édition
 import { EditMedecinComponent } from './components/edit-medecin/edit-medecin.component';
 import { EditPersonnelComponent } from './components/edit-personnel/edit-personnel.component';
 import { EditChefServiceComponent } from './components/edit-chef-service/edit-chef-service.component';
@@ -78,7 +83,6 @@ interface UserWithMetadata {
     MatSnackBarModule,
     MatDialogModule,
     ModalModule,
-    // Composants d'édition
     EditMedecinComponent,
     EditPersonnelComponent,
     EditChefServiceComponent,
@@ -97,7 +101,6 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
-  // Signaux pour la gestion d'état
   utilisateurs = signal<UserWithMetadata[]>([]);
   utilisateursFiltres = signal<UserWithMetadata[]>([]);
   loadingIndicator = signal(false);
@@ -105,13 +108,13 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
   modalRef = signal<BsModalRef | null>(null);
   selectedUser = signal<AnyUtilisateur | null>(null);
   selectedType = signal<string>('TOUS');
+  selectedStatut = signal<string>('TOUS');
   currentModalType = signal<string>('');
   searchTerm = signal<string>('');
 
-  // Configuration de la table
   displayedColumns: string[] = [
     'matricule',
-    'prenom', 
+    'prenom',
     'nom',
     'email',
     'type',
@@ -122,39 +125,41 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
 
   dataSource = new MatTableDataSource<UserWithMetadata>([]);
 
-  // Types d'utilisateurs disponibles
   userTypes = [
-    { value: 'TOUS', label: '👥 Tous les utilisateurs', icon: 'groups' },
-    { value: 'MEDECIN', label: '👨‍⚕️ Médecins', icon: 'local_hospital' },
-    { value: 'PERSONNEL', label: '👨‍💼 Personnel', icon: 'badge' },
-    { value: 'CHEF_SERVICE', label: '👔 Chefs de Service', icon: 'supervisor_account' },
-    { value: 'ADMIN', label: '🔧 Administrateurs', icon: 'admin_panel_settings' }
+    { value: 'TOUS', label: 'Tous les utilisateurs', icon: 'groups' },
+    { value: 'MEDECIN', label: 'Médecins', icon: 'local_hospital' },
+    { value: 'PERSONNEL', label: 'Personnel', icon: 'badge' },
+    { value: 'CHEF_SERVICE', label: 'Chefs de Service', icon: 'supervisor_account' },
+    { value: 'ADMIN', label: 'Administrateurs', icon: 'admin_panel_settings' }
   ];
 
-  ngOnInit() {
+  statutsFiltres = [
+    { value: 'TOUS', label: 'Tous les statuts' },
+    { value: 'ACTIF', label: 'ACTIF' },
+    { value: 'INACTIF', label: 'INACTIF' },
+    { value: 'CONGÉ', label: 'CONGÉ' },
+    { value: 'EN_ATTENTE_ACTIVATION', label: 'EN_ATTENTE_ACTIVATION' }
+  ];
+
+  ngOnInit(): void {
     this.loadUtilisateurs();
   }
 
-  ngAfterViewInit() {
+  ngAfterViewInit(): void {
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
-    
-    // Configurer le filtrage personnalisé
     this.dataSource.filterPredicate = this.createFilterPredicate();
   }
 
-  ngOnDestroy() {
+  ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
     this.closeModal();
   }
 
-  /**
-   * Charge la liste des utilisateurs
-   */
-  loadUtilisateurs() {
+  loadUtilisateurs(): void {
     this.loadingIndicator.set(true);
-    
+
     this.utilisateurService.getAllUtilisateurs()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -163,8 +168,6 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
           this.utilisateurs.set(usersWithMetadata);
           this.applyFilters();
           this.loadingIndicator.set(false);
-          
-          this.showSuccess(`${usersWithMetadata.length} utilisateur(s) chargé(s)`);
         },
         error: (err) => {
           this.loadingIndicator.set(false);
@@ -174,10 +177,7 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
-  /**
-   * Ouvre la modale de sélection du type d'utilisateur
-   */
-  openAddUserModal() {
+  openAddUserModal(): void {
     const dialogRef = this.dialog.open(UserTypeSelectorComponent, {
       width: '600px',
       maxWidth: '95vw',
@@ -186,34 +186,26 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe((selectedType: string) => {
       if (selectedType) {
-        console.log(`🎯 Type sélectionné: ${selectedType}`);
         this.openUserFormModal(undefined, selectedType);
-      } else {
-        console.log('❌ Sélection annulée');
       }
     });
   }
 
-  /**
-   * Ouvre la modale d'édition/création d'utilisateur
-   */
-  openUserFormModal(user?: AnyUtilisateur, type?: string) {
+  openUserFormModal(user?: AnyUtilisateur, type?: string): void {
     this.selectedUser.set(user || null);
-    
-    // Déterminer le type de modale
+
     let modalType: string;
     if (user) {
       modalType = getUserType(user);
     } else if (type) {
       modalType = type;
     } else {
-      console.warn('⚠️ Type non spécifié pour la création');
+      this.showWarning('Type d’utilisateur non spécifié');
       return;
     }
-    
+
     this.currentModalType.set(modalType);
 
-    // Configuration de la modale
     const modalConfig = {
       class: 'modal-lg',
       ignoreBackdropClick: true,
@@ -223,7 +215,6 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     };
 
-    // Ouvrir la modale appropriée
     let modalComponent: any;
     switch (modalType) {
       case 'MEDECIN':
@@ -239,21 +230,25 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
         modalComponent = EditAdminComponent;
         break;
       default:
-        this.showError('Type d\'utilisateur non supporté');
+        this.showError('Type d’utilisateur non supporté');
         return;
     }
 
     this.modalRef.set(this.modalService.show(modalComponent, modalConfig));
 
-    // Gérer les événements de la modale
     if (this.modalRef()) {
-      this.modalRef()!.content!.save
+      const modalContent = this.modalRef()!.content as {
+        save: Observable<AnyUtilisateur>;
+        cancel: Observable<void>;
+      };
+
+      modalContent.save
         .pipe(takeUntil(this.destroy$))
-        .subscribe((data: any) => {
+        .subscribe((data: AnyUtilisateur) => {
           this.onUserSaved(data);
         });
-      
-      this.modalRef()!.content!.cancel
+
+      modalContent.cancel
         .pipe(takeUntil(this.destroy$))
         .subscribe(() => {
           this.closeModal();
@@ -261,10 +256,7 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  /**
-   * Ferme la modale active
-   */
-  closeModal() {
+  closeModal(): void {
     if (this.modalRef()) {
       this.modalRef()?.hide();
     }
@@ -272,34 +264,33 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
     this.currentModalType.set('');
   }
 
-  /**
-   * Gère la sauvegarde d'un utilisateur
-   */
-  onUserSaved(utilisateur: AnyUtilisateur) {
+  onUserSaved(utilisateur: AnyUtilisateur): void {
     this.savingIndicator.set(true);
-    
+
     const existingUser = this.selectedUser();
     const isEdit = !!existingUser;
-    
-    console.log(`💾 ${isEdit ? 'Mise à jour' : 'Création'} utilisateur:`, utilisateur);
 
-    const request$ = isEdit
+    const request$: Observable<any> = isEdit
       ? this.utilisateurService.updateUtilisateur(existingUser.id!, utilisateur)
       : this.utilisateurService.createUtilisateur(utilisateur);
 
     request$
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (savedUser) => {
+        next: (response: any) => {
           this.savingIndicator.set(false);
-          this.showSuccess(`Utilisateur ${isEdit ? 'mis à jour' : 'créé'} avec succès`);
+
+          const successMessage = isEdit
+            ? 'Utilisateur mis à jour avec succès'
+            : (response?.message || 'Compte créé avec succès. Email d’activation envoyé.');
+
+          this.showSuccess(successMessage);
           this.loadUtilisateurs();
           this.closeModal();
         },
         error: (err) => {
           this.savingIndicator.set(false);
-          
-          // Gérer l'erreur dans la modale active
+
           const modalRef = this.modalRef();
           if (modalRef && modalRef.content) {
             if (modalRef.content.setBackendError) {
@@ -309,20 +300,17 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
               modalRef.content.stopLoading();
             }
           } else {
-            this.showError(`Erreur lors de la ${isEdit ? 'mise à jour' : 'création'}: ${err.message}`);
+            this.showError(`Erreur lors de la ${isEdit ? 'mise à jour' : 'création'} : ${err.message}`);
           }
-          
+
           console.error(`❌ Erreur ${isEdit ? 'mise à jour' : 'création'} utilisateur:`, err);
         }
       });
   }
 
-  /**
-   * Supprime un utilisateur
-   */
-  deleteUser(user: UserWithMetadata) {
+  deleteUser(user: UserWithMetadata): void {
     if (!user.id) {
-      this.showError('Impossible de supprimer: ID manquant');
+      this.showError('Impossible de supprimer : ID manquant');
       return;
     }
 
@@ -334,96 +322,125 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
       `Cette action est irréversible.`
     );
 
-    if (confirmation) {
-      this.utilisateurService.deleteUtilisateur(user.id)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            this.showSuccess('Utilisateur supprimé avec succès');
-            
-            // Mettre à jour les données localement
-            this.utilisateurs.update(list => list.filter(u => u.id !== user.id));
-            this.applyFilters();
-          },
-          error: (err) => {
-            this.showError('Erreur lors de la suppression');
-            console.error('❌ Erreur suppression utilisateur:', err);
-          }
-        });
-    }
+    if (!confirmation) return;
+
+    this.utilisateurService.deleteUtilisateur(user.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.showSuccess('Utilisateur supprimé avec succès');
+          this.utilisateurs.update(list => list.filter(u => u.id !== user.id));
+          this.applyFilters();
+        },
+        error: (err) => {
+          this.showError('Erreur lors de la suppression');
+          console.error('❌ Erreur suppression utilisateur:', err);
+        }
+      });
   }
 
-  /**
-   * Filtre par type d'utilisateur
-   */
-  onTypeFilterChange(event: any) {
-    const type = event.value;
-    this.selectedType.set(type);
+  onTypeFilterChange(event: any): void {
+    this.selectedType.set(event.value);
     this.applyFilters();
   }
 
-  /**
-   * Filtre par recherche texte
-   */
-  onFilterChange(event: any) {
-    const term = event.target.value.toLowerCase();
-    this.searchTerm.set(term);
+  onStatutFilterChange(event: any): void {
+    this.selectedStatut.set(event.value);
     this.applyFilters();
   }
 
-  /**
-   * Applique tous les filtres
-   */
-  public applyFilters() {
+  onFilterChange(event: any): void {
+    this.searchTerm.set((event.target.value || '').toLowerCase().trim());
+    this.applyFilters();
+  }
+
+  clearSearch(): void {
+    this.searchTerm.set('');
+    this.applyFilters();
+  }
+
+  applyQuickStatutFilter(statut: string): void {
+    this.selectedStatut.set(statut);
+    this.applyFilters();
+  }
+
+  resetFilters(): void {
+    this.selectedType.set('TOUS');
+    this.selectedStatut.set('TOUS');
+    this.searchTerm.set('');
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
     let filtered = this.utilisateurs();
 
-    // Filtre par type
     const selectedType = this.selectedType();
     if (selectedType !== 'TOUS') {
       filtered = filtered.filter(u => getUserType(u as AnyUtilisateur) === selectedType);
     }
 
-    // Filtre par recherche
+    const selectedStatut = this.selectedStatut();
+    if (selectedStatut !== 'TOUS') {
+      filtered = filtered.filter(u => (u.statut || '').toUpperCase() === selectedStatut.toUpperCase());
+    }
+
     const searchTerm = this.searchTerm();
     if (searchTerm) {
       filtered = filtered.filter(u =>
-        [u.nom, u.prenom, u.email, u.matricule, u.specificInfo, u.telephone]
-          .some(field => field?.toLowerCase().includes(searchTerm))
+        [
+          u.nom,
+          u.prenom,
+          u.email,
+          u.matricule,
+          u.specificInfo,
+          u.telephone,
+          u.typeLabel,
+          u.role,
+          u.fonction,
+          u.specialite,
+          u.serviceDirige,
+          u.departement,
+          u.statut
+        ].some(field => field?.toLowerCase().includes(searchTerm))
       );
     }
 
     this.utilisateursFiltres.set(filtered);
     this.dataSource.data = filtered;
-    
-    // Appliquer le filtre à la datasource pour la pagination
-    this.dataSource.filter = searchTerm;
 
-    console.log(`🔍 Filtres appliqués: ${filtered.length} résultat(s)`);
+    if (this.paginator) {
+      this.paginator.firstPage();
+    }
   }
 
-  /**
-   * Prédicat de filtrage personnalisé pour MatTable
-   */
   private createFilterPredicate() {
     return (data: UserWithMetadata, filter: string): boolean => {
       if (!filter) return true;
-      
+
       const searchTerms = filter.toLowerCase().split(' ');
       const searchableFields = [
-        data.nom, data.prenom, data.email, data.matricule, 
-        data.specificInfo, data.telephone, data.typeLabel
+        data.nom,
+        data.prenom,
+        data.email,
+        data.matricule,
+        data.specificInfo,
+        data.telephone,
+        data.typeLabel,
+        data.role,
+        data.fonction,
+        data.specialite,
+        data.serviceDirige,
+        data.departement,
+        data.statut
       ].map(field => field?.toLowerCase() || '');
 
-      return searchTerms.every(term => 
+      return searchTerms.every(term =>
         searchableFields.some(field => field.includes(term))
       );
     };
   }
 
-  /**
-   * Exporte les données en Excel
-   */
-  exportToExcel() {
+  exportToExcel(): void {
     const data = this.utilisateursFiltres().map(u => ({
       'Matricule': u.matricule,
       'Nom': u.nom,
@@ -436,7 +453,7 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
       'Date Embauche': u.dateEmbauche ? this.formatDateForDisplay(u.dateEmbauche) : 'N/A',
       'Statut': u.statut,
       'Type': u.typeLabel,
-      'Spécialité/Fonction': u.specificInfo || 'N/A',
+      'Spécialité / Fonction': u.specificInfo || 'N/A',
       'Adresse': u.adresse || 'Non renseignée'
     }));
 
@@ -447,90 +464,79 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
 
     try {
       const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(data);
-      const wb: XLSX.WorkBook = { 
-        Sheets: { 'Utilisateurs': ws }, 
-        SheetNames: ['Utilisateurs'] 
+      const wb: XLSX.WorkBook = {
+        Sheets: { 'Utilisateurs': ws },
+        SheetNames: ['Utilisateurs']
       };
-      
-      // Ajuster la largeur des colonnes
-      const colWidths = [
-        { wch: 12 }, // Matricule
-        { wch: 15 }, // Nom
-        { wch: 15 }, // Prénom
-        { wch: 25 }, // Email
-        { wch: 15 }, // Téléphone
-        { wch: 10 }, // Sexe
-        { wch: 8 },  // Âge
-        { wch: 12 }, // Date Naissance
-        { wch: 12 }, // Date Embauche
-        { wch: 10 }, // Statut
-        { wch: 15 }, // Type
-        { wch: 20 }, // Spécialité/Fonction
-        { wch: 30 }  // Adresse
-      ];
-      ws['!cols'] = colWidths;
 
-      const excelBuffer: any = XLSX.write(wb, { 
-        bookType: 'xlsx', 
+      ws['!cols'] = [
+        { wch: 12 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 25 },
+        { wch: 15 },
+        { wch: 10 },
+        { wch: 8 },
+        { wch: 14 },
+        { wch: 14 },
+        { wch: 24 },
+        { wch: 18 },
+        { wch: 24 },
+        { wch: 30 }
+      ];
+
+      const excelBuffer: any = XLSX.write(wb, {
+        bookType: 'xlsx',
         type: 'array',
         cellStyles: true
       });
-      
-      const file = new Blob([excelBuffer], { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+
+      const file = new Blob([excelBuffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
-      
+
       const fileName = `utilisateurs_${new Date().toISOString().split('T')[0]}.xlsx`;
       saveAs(file, fileName);
-      
-      this.showSuccess(`Fichier exporté: ${fileName}`);
+
+      this.showSuccess(`Fichier exporté : ${fileName}`);
     } catch (error) {
-      this.showError('Erreur lors de l\'export Excel');
+      this.showError('Erreur lors de l’export Excel');
       console.error('❌ Erreur export Excel:', error);
     }
   }
 
-  /**
-   * Enrichit un utilisateur avec des métadonnées pour l'affichage
-   */
   private enrichUserWithMetadata(user: AnyUtilisateur): UserWithMetadata {
     const type = getUserType(user);
     const age = this.calculateAge(user.dateNaissance);
-    
+
     return {
       ...user,
       typeLabel: getUserTypeLabel(user),
       badgeClass: this.getTypeBadgeClass(type),
       specificInfo: this.getSpecificInfo(user),
-      age: age
+      age
     } as UserWithMetadata;
   }
 
-  /**
-   * Calcule l'âge à partir de la date de naissance
-   */
   private calculateAge(dateNaissance: string): number {
     if (!dateNaissance) return 0;
-    
+
     try {
       const birthDate = new Date(dateNaissance);
       const today = new Date();
       let age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
-      
+
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
         age--;
       }
-      
+
       return age;
     } catch {
       return 0;
     }
   }
 
-  /**
-   * Convertit un utilisateur générique en type spécifique
-   */
   private convertToSpecificType(user: AnyUtilisateur, targetType: string): any {
     const baseData = {
       id: user.id,
@@ -561,28 +567,23 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  /**
-   * Obtient les informations spécifiques selon le type d'utilisateur
-   */
   getSpecificInfo(user: AnyUtilisateur): string {
     switch (getUserType(user)) {
-      case 'MEDECIN': 
-        return (user as any).specialite || 'Non spécifiée';
-      case 'PERSONNEL': 
-        return (user as any).fonction || 'Non spécifiée';
-      case 'CHEF_SERVICE': 
+      case 'MEDECIN':
+        return (user as any).specialite || 'Spécialité non spécifiée';
+      case 'PERSONNEL':
+        return (user as any).fonction || 'Fonction non spécifiée';
+      case 'CHEF_SERVICE': {
         const chef = user as any;
         return `${chef.serviceDirige || 'Service non défini'}${chef.departement ? ` - ${chef.departement}` : ''}`;
-      case 'ADMIN': 
+      }
+      case 'ADMIN':
         return (user as any).role || 'Rôle non défini';
-      default: 
+      default:
         return 'Information non disponible';
     }
   }
 
-  /**
-   * Obtient la classe CSS pour le badge de type
-   */
   getTypeBadgeClass(type: string): string {
     const classes: { [key: string]: string } = {
       MEDECIN: 'badge bg-primary',
@@ -594,9 +595,101 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
     return classes[type] || 'badge bg-secondary';
   }
 
-  /**
-   * Formate une date pour l'affichage
-   */
+  getStatutChipColor(statut: string): 'primary' | 'accent' | 'warn' {
+    switch ((statut || '').toUpperCase()) {
+      case 'ACTIF':
+        return 'primary';
+      case 'EN_ATTENTE_ACTIVATION':
+        return 'accent';
+      case 'INACTIF':
+      case 'CONGÉ':
+        return 'warn';
+      default:
+        return 'warn';
+    }
+  }
+
+  getStatutIcon(statut: string): string {
+    switch ((statut || '').toUpperCase()) {
+      case 'ACTIF':
+        return 'check_circle';
+      case 'EN_ATTENTE_ACTIVATION':
+        return 'hourglass_top';
+      case 'INACTIF':
+        return 'pause_circle';
+      case 'CONGÉ':
+        return 'beach_access';
+      default:
+        return 'help';
+    }
+  }
+
+  getStatutTooltip(statut: string): string {
+    switch ((statut || '').toUpperCase()) {
+      case 'ACTIF':
+        return 'Compte actif';
+      case 'EN_ATTENTE_ACTIVATION':
+        return 'Compte créé, en attente d’activation par email';
+      case 'INACTIF':
+        return 'Compte inactif';
+      case 'CONGÉ':
+        return 'Utilisateur temporairement indisponible';
+      default:
+        return 'Statut inconnu';
+    }
+  }
+
+  formatStatutLabel(statut: string): string {
+    switch ((statut || '').toUpperCase()) {
+      case 'EN_ATTENTE_ACTIVATION':
+        return 'En attente';
+      case 'CONGÉ':
+        return 'Congé';
+      case 'ACTIF':
+        return 'Actif';
+      case 'INACTIF':
+        return 'Inactif';
+      default:
+        return statut || 'Inconnu';
+    }
+  }
+
+  getStatutCount(statut: string): number {
+    return this.utilisateurs().filter(u => (u.statut || '').toUpperCase() === statut.toUpperCase()).length;
+  }
+
+  getInactiveLikeCount(): number {
+    return this.utilisateurs().filter(u =>
+      ['INACTIF', 'CONGÉ'].includes((u.statut || '').toUpperCase())
+    ).length;
+  }
+
+  showUserSummary(user: UserWithMetadata): void {
+    const summary =
+      `👤 ${user.prenom} ${user.nom}\n` +
+      `📌 Type : ${user.typeLabel}\n` +
+      `📧 Email : ${user.email}\n` +
+      `📞 Téléphone : ${user.telephone || 'Non renseigné'}\n` +
+      `🩺 Spécificité : ${user.specificInfo || 'Non renseignée'}\n` +
+      `📍 Statut : ${this.formatStatutLabel(user.statut)}`;
+
+    this.showSuccess(summary);
+  }
+
+  resendActivationEmail(user: UserWithMetadata): void {
+    this.showWarning(
+      `Prévoir un endpoint backend pour renvoyer l’email d’activation à ${user.email}.`
+    );
+  }
+
+  toggleUserStatus(user: UserWithMetadata): void {
+    const targetStatus = user.statut === 'ACTIF' ? 'INACTIF' : 'ACTIF';
+
+    this.showWarning(
+      `Prévoir un endpoint backend pour changer le statut de ${user.prenom} ${user.nom} vers ${targetStatus}.`
+    );
+  }
+
   private formatDateForDisplay(dateString: string): string {
     if (!dateString) return 'N/A';
     try {
@@ -607,61 +700,40 @@ export class UtilisateursComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  /**
-   * Affiche un message de succès
-   */
-  private showSuccess(message: string) {
+  private showSuccess(message: string): void {
     this.snackBar.open(`✅ ${message}`, 'Fermer', {
       duration: 5000,
       panelClass: ['snackbar-success']
     });
   }
 
-  /**
-   * Affiche un message d'erreur
-   */
-  private showError(message: string) {
+  private showError(message: string): void {
     this.snackBar.open(`❌ ${message}`, 'Fermer', {
       duration: 7000,
       panelClass: ['snackbar-error']
     });
   }
 
-  /**
-   * Affiche un message d'avertissement
-   */
-  private showWarning(message: string) {
+  private showWarning(message: string): void {
     this.snackBar.open(`⚠️ ${message}`, 'Fermer', {
-      duration: 5000,
+      duration: 6000,
       panelClass: ['snackbar-warning']
     });
   }
 
-  /**
-   * Rafraîchit la liste des utilisateurs
-   */
-  refreshList() {
+  refreshList(): void {
     this.loadUtilisateurs();
   }
 
-  /**
-   * Obtient le libellé du type sélectionné
-   */
   getSelectedTypeLabel(): string {
     const selected = this.userTypes.find(t => t.value === this.selectedType());
     return selected?.label || 'Tous les utilisateurs';
   }
 
-  /**
-   * Obtient le nombre total d'utilisateurs filtrés
-   */
   getFilteredCount(): number {
     return this.utilisateursFiltres().length;
   }
 
-  /**
-   * Obtient le nombre total d'utilisateurs
-   */
   getTotalCount(): number {
     return this.utilisateurs().length;
   }

@@ -1,7 +1,8 @@
 // services/utilisateur.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, throwError, catchError, tap } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
 import { AnyUtilisateur, getUserType } from '../interfaces/any-utilisateur.interface';
 import { environment } from '../../environments/environment';
 
@@ -11,13 +12,41 @@ export interface ApiResponse<T> {
   status: string;
 }
 
+export interface CreateUtilisateurAdminRequest {
+  matricule: string;
+  nom: string;
+  prenom: string;
+  email: string;
+  telephone?: string;
+  sexe?: string;
+  dateNaissance?: string;
+  adresse?: string;
+  dateEmbauche?: string;
+  statut?: string;
+
+  typeUtilisateur: 'ADMIN' | 'MEDECIN' | 'PERSONNEL' | 'CHEF_SERVICE';
+
+  specialite?: string;
+  fonction?: string;
+  serviceDirige?: string;
+  departement?: string;
+  role?: string;
+  droitsAccess?: string;
+}
+
+export interface CreateUtilisateurAdminResponse {
+  success: boolean;
+  message: string;
+  email: string;
+  statut: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class UtilisateurService {
   private http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}`;
-
 
   private readonly httpOptions = {
     headers: new HttpHeaders({
@@ -26,51 +55,337 @@ export class UtilisateurService {
     })
   };
 
-  /**
-   * Récupère tous les utilisateurs
-   */
   getAllUtilisateurs(): Observable<AnyUtilisateur[]> {
     console.log('🔄 Chargement de tous les utilisateurs...');
-    
-    return this.http.get<AnyUtilisateur[]>(`${this.baseUrl}/utilisateurs`, this.httpOptions)
-      .pipe(
-        tap(users => console.log(`✅ ${users.length} utilisateur(s) chargé(s)`, users)),
-        catchError(error => this.handleError(error))
-      );
+
+    return this.http.get<AnyUtilisateur[]>(`${this.baseUrl}/utilisateurs`, this.httpOptions).pipe(
+      tap(users => console.log(`✅ ${users.length} utilisateur(s) chargé(s)`, users)),
+      catchError(error => this.handleError(error))
+    );
   }
 
   /**
-   * Créer un utilisateur selon son type - AMÉLIORÉ avec meilleure gestion d'erreurs
+   * Création via l'endpoint admin :
+   * POST /api/admin/utilisateurs
    */
-  createUtilisateur(utilisateur: AnyUtilisateur): Observable<AnyUtilisateur> {
-    const type = getUserType(utilisateur);
-    const url = this.getCreateUrlByType(type);
-    
-    // Nettoyage des données pour la création
-    const sanitizedData = this.sanitizeUserDataForCreation(utilisateur);
+  createUtilisateur(utilisateur: AnyUtilisateur): Observable<CreateUtilisateurAdminResponse> {
+    const payload = this.buildAdminCreatePayload(utilisateur);
 
-    console.log('🟢 Création utilisateur:', { 
-      type, 
-      url, 
-      donnéesNettoyées: sanitizedData
+    console.log('🟢 Création utilisateur via admin:', {
+      endpoint: `${this.baseUrl}/admin/utilisateurs`,
+      payload
     });
 
-    // Validation finale avant envoi
-    const validation = this.validateUserData(sanitizedData, 'CREATE');
+    const validation = this.validateAdminCreatePayload(payload);
     if (!validation.isValid) {
       return throwError(() => new Error(validation.errors.join(', ')));
     }
 
-    return this.http.post<AnyUtilisateur>(url, sanitizedData, this.httpOptions)
-      .pipe(
-        tap(response => console.log('✅ Utilisateur créé avec succès:', response)),
-        catchError(error => this.handleCreateError(error)) // ✅ CHANGEMENT ICI : Méthode spécifique pour création
-      );
+    return this.http.post<CreateUtilisateurAdminResponse>(
+      `${this.baseUrl}/admin/utilisateurs`,
+      payload,
+      this.httpOptions
+    ).pipe(
+      tap(response => console.log('✅ Utilisateur créé avec succès via admin:', response)),
+      catchError(error => this.handleCreateError(error))
+    );
   }
 
-  /**
-   * ✅ NOUVELLE MÉTHODE : Gestion spécifique des erreurs de création
-   */
+  updateUtilisateur(id: number, utilisateur: AnyUtilisateur): Observable<AnyUtilisateur> {
+    const type = getUserType(utilisateur);
+    const url = this.getUpdateUrlByType(type, id);
+    const sanitizedData = this.sanitizeUserDataForUpdate(utilisateur, id);
+
+    console.log('🟡 Mise à jour utilisateur:', {
+      type,
+      url,
+      id,
+      donnéesNettoyées: sanitizedData
+    });
+
+    const validation = this.validateUserDataForUpdate(sanitizedData);
+    if (!validation.isValid) {
+      return throwError(() => new Error(validation.errors.join(', ')));
+    }
+
+    return this.http.put<AnyUtilisateur>(url, sanitizedData, this.httpOptions).pipe(
+      tap(response => console.log('✅ Utilisateur mis à jour avec succès:', response)),
+      catchError(error => this.handleUpdateError(error))
+    );
+  }
+
+  deleteUtilisateur(id: number): Observable<void> {
+    const url = `${this.baseUrl}/utilisateurs/${id}`;
+
+    console.log('🔴 Suppression utilisateur:', { id, url });
+
+    return this.http.delete<void>(url, this.httpOptions).pipe(
+      tap(() => console.log(`✅ Utilisateur ${id} supprimé avec succès`)),
+      catchError(error => this.handleError(error))
+    );
+  }
+
+  getUtilisateurById(id: number): Observable<AnyUtilisateur> {
+    const url = `${this.baseUrl}/utilisateurs/${id}`;
+
+    console.log('🔍 Récupération utilisateur par ID:', { id, url });
+
+    return this.http.get<AnyUtilisateur>(url, this.httpOptions).pipe(
+      tap(user => console.log('✅ Utilisateur récupéré:', user)),
+      catchError(error => this.handleError(error))
+    );
+  }
+
+  searchUtilisateurs(term: string): Observable<AnyUtilisateur[]> {
+    const params = new HttpParams().set('search', term);
+
+    console.log('🔍 Recherche utilisateurs:', term);
+
+    return this.http.get<AnyUtilisateur[]>(
+      `${this.baseUrl}/utilisateurs/search`,
+      { ...this.httpOptions, params }
+    ).pipe(
+      tap(users => console.log(`✅ ${users.length} résultat(s) trouvé(s)`, users)),
+      catchError(error => this.handleError(error))
+    );
+  }
+
+  private buildAdminCreatePayload(utilisateur: AnyUtilisateur): CreateUtilisateurAdminRequest {
+    const raw = JSON.parse(JSON.stringify(utilisateur));
+    const typeUtilisateur = getUserType(raw) as CreateUtilisateurAdminRequest['typeUtilisateur'];
+
+    const payload: CreateUtilisateurAdminRequest = {
+      matricule: (raw.matricule || '').trim(),
+      nom: (raw.nom || '').trim(),
+      prenom: (raw.prenom || '').trim(),
+      email: (raw.email || '').trim().toLowerCase(),
+      telephone: raw.telephone?.trim() || undefined,
+      sexe: raw.sexe || undefined,
+      dateNaissance: this.formatDate(raw.dateNaissance),
+      adresse: raw.adresse?.trim() || undefined,
+      dateEmbauche: this.formatDate(raw.dateEmbauche),
+      statut: 'EN_ATTENTE_ACTIVATION',
+      typeUtilisateur
+    };
+
+    switch (typeUtilisateur) {
+      case 'MEDECIN':
+        payload.specialite = raw.specialite?.trim() || '';
+        break;
+      case 'PERSONNEL':
+        payload.fonction = raw.fonction?.trim() || '';
+        break;
+      case 'CHEF_SERVICE':
+        payload.serviceDirige = raw.serviceDirige?.trim() || '';
+        payload.departement = raw.departement?.trim() || '';
+        break;
+      case 'ADMIN':
+        payload.role = raw.role?.trim() || '';
+        payload.droitsAccess = raw.droitsAccess?.trim() || '';
+        break;
+    }
+
+    return payload;
+  }
+
+  private validateAdminCreatePayload(
+    data: CreateUtilisateurAdminRequest
+  ): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    const requiredFields: (keyof CreateUtilisateurAdminRequest)[] = [
+      'matricule',
+      'nom',
+      'prenom',
+      'email',
+      'typeUtilisateur'
+    ];
+
+    requiredFields.forEach(field => {
+      const value = data[field];
+      if (!value || value.toString().trim() === '') {
+        errors.push(`Le champ ${field} est requis`);
+      }
+    });
+
+    if (data.email && !this.isValidEmail(data.email)) {
+      errors.push('Format d\'email invalide');
+    }
+
+    if (data.dateNaissance && !this.isValidDate(data.dateNaissance)) {
+      errors.push('Date de naissance invalide');
+    }
+
+    if (data.dateEmbauche && !this.isValidDate(data.dateEmbauche)) {
+      errors.push('Date d\'embauche invalide');
+    }
+
+    if (data.typeUtilisateur === 'MEDECIN' && !data.specialite?.trim()) {
+      errors.push('La spécialité est requise pour un médecin');
+    }
+
+    if (data.typeUtilisateur === 'PERSONNEL' && !data.fonction?.trim()) {
+      errors.push('La fonction est requise pour le personnel');
+    }
+
+    if (data.typeUtilisateur === 'CHEF_SERVICE' && !data.serviceDirige?.trim()) {
+      errors.push('Le service dirigé est requis pour un chef de service');
+    }
+
+    if (data.typeUtilisateur === 'ADMIN' && !data.role?.trim()) {
+      errors.push('Le rôle est requis pour un administrateur');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  private sanitizeUserDataForUpdate(utilisateur: AnyUtilisateur, id: number): any {
+    const sanitized = JSON.parse(JSON.stringify(utilisateur));
+
+    console.log('🧹 Nettoyage données mise à jour - Avant:', sanitized);
+
+    sanitized.id = id;
+
+    sanitized.motDePasse = this.cleanPasswordField(sanitized.motDePasse);
+
+    if (!sanitized.motDePasse || sanitized.motDePasse.toString().trim() === '') {
+      delete sanitized.motDePasse;
+      console.log('🔐 Mot de passe vide - suppression du champ');
+    }
+
+    this.removeProblematicFields(sanitized);
+    this.cleanEmptyFields(sanitized, true);
+    this.formatDatesInObject(sanitized);
+
+    console.log('🧹 Nettoyage données mise à jour - Après:', sanitized);
+    return sanitized;
+  }
+
+  private validateUserDataForUpdate(data: any): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    if (data.email && !this.isValidEmail(data.email)) {
+      errors.push('Format d\'email invalide');
+    }
+
+    if (data.dateNaissance && !this.isValidDate(data.dateNaissance)) {
+      errors.push('Date de naissance invalide');
+    }
+
+    if (data.dateEmbauche && !this.isValidDate(data.dateEmbauche)) {
+      errors.push('Date d\'embauche invalide');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  private cleanPasswordField(password: any): string {
+    if (!password) return '';
+
+    let cleanedPassword = password;
+
+    if (Array.isArray(cleanedPassword)) {
+      cleanedPassword = cleanedPassword[0] || '';
+    }
+
+    if (typeof cleanedPassword === 'object' && cleanedPassword !== null) {
+      if ('value' in cleanedPassword) {
+        cleanedPassword = cleanedPassword.value || '';
+      } else {
+        cleanedPassword = '';
+      }
+    }
+
+    return cleanedPassword.toString().trim();
+  }
+
+  private removeProblematicFields(data: any): void {
+    const fieldsToRemove = [
+      'demandes',
+      'transfusions',
+      'createdAt',
+      'updatedAt',
+      'version'
+    ];
+
+    fieldsToRemove.forEach(field => {
+      if (field in data) {
+        delete data[field];
+      }
+    });
+  }
+
+  private cleanEmptyFields(data: any, keepEmptyStrings: boolean = false): void {
+    Object.keys(data).forEach(key => {
+      const value = data[key];
+
+      if (value === undefined || value === null) {
+        delete data[key];
+      } else if (!keepEmptyStrings && typeof value === 'string' && value.trim() === '') {
+        delete data[key];
+      } else if (Array.isArray(value) && value.length === 0) {
+        delete data[key];
+      }
+    });
+  }
+
+  private formatDatesInObject(data: any): void {
+    const dateFields = ['dateNaissance', 'dateEmbauche'];
+
+    dateFields.forEach(field => {
+      if (data[field]) {
+        const formatted = this.formatDate(data[field]);
+        if (formatted) {
+          data[field] = formatted;
+        } else {
+          delete data[field];
+        }
+      }
+    });
+  }
+
+  private formatDate(value: any): string | undefined {
+    if (!value) return undefined;
+
+    try {
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        return undefined;
+      }
+      return date.toISOString().split('T')[0];
+    } catch {
+      return undefined;
+    }
+  }
+
+  private isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  private isValidDate(dateString: string): boolean {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    return !isNaN(date.getTime());
+  }
+
+  private getUpdateUrlByType(type: string, id: number): string {
+    const endpoints: Record<string, string> = {
+      'MEDECIN': `${this.baseUrl}/medecins/${id}`,
+      'PERSONNEL': `${this.baseUrl}/personnel/${id}`,
+      'CHEF_SERVICE': `${this.baseUrl}/chefs-service/${id}`,
+      'ADMIN': `${this.baseUrl}/admins/${id}`
+    };
+
+    return endpoints[type] || `${this.baseUrl}/utilisateurs/${id}`;
+  }
+
   private handleCreateError(error: HttpErrorResponse): Observable<never> {
     console.error('🔍 ERREUR CRÉATION DÉTAILLÉE:', {
       status: error.status,
@@ -83,10 +398,9 @@ export class UtilisateurService {
     let userMessage = 'Erreur lors de la création.';
 
     if (error.status === 400) {
-      // Extraire le message d'erreur du backend
       userMessage = this.extractBackendErrorMessage(error);
     } else if (error.status === 409) {
-      userMessage = 'Conflit : Données déjà existantes.';
+      userMessage = 'Conflit : données déjà existantes.';
     } else if (error.status === 0) {
       userMessage = 'Erreur de connexion au serveur. Vérifiez votre connexion.';
     } else if (error.status >= 500) {
@@ -96,87 +410,6 @@ export class UtilisateurService {
     return throwError(() => new Error(userMessage));
   }
 
-  /**
-   * ✅ NOUVELLE MÉTHODE : Extraction du message d'erreur backend
-   */
-  private extractBackendErrorMessage(error: HttpErrorResponse): string {
-    if (!error.error) {
-      return 'Données invalides envoyées au serveur.';
-    }
-
-    // Si le backend retourne un objet avec un message
-    if (typeof error.error === 'object') {
-      const serverError = error.error;
-      
-      // Format Spring Boot standard avec message
-      if (serverError.message) {
-        return serverError.message; // "Le matricule existe déjà", "L'email existe déjà", etc.
-      }
-      
-      // Format avec champ "error"
-      if (serverError.error) {
-        return serverError.error;
-      }
-      
-      // Validation errors (Spring Boot)
-      if (serverError.errors) {
-        const validationErrors = Object.values(serverError.errors).flat();
-        return `Erreurs de validation: ${validationErrors.join(', ')}`;
-      }
-      
-      // Essayer de stringifier l'objet
-      try {
-        const errorStr = JSON.stringify(serverError);
-        if (errorStr !== '{}') {
-          return `Erreur serveur: ${errorStr}`;
-        }
-      } catch (e) {
-        console.warn('Impossible de parser l\'erreur:', e);
-      }
-    }
-    
-    // Si c'est une string directement
-    if (typeof error.error === 'string' && error.error.length > 0) {
-      return error.error;
-    }
-
-    // Message par défaut avec les erreurs courantes
-    return 'Erreur de validation. Vérifiez que le matricule et l\'email ne sont pas déjà utilisés.';
-  }
-
-  /**
-   * Mettre à jour un utilisateur existant
-   */
-  updateUtilisateur(id: number, utilisateur: AnyUtilisateur): Observable<AnyUtilisateur> {
-    const type = getUserType(utilisateur);
-    const url = this.getUpdateUrlByType(type, id);
-    
-    // Nettoyage des données pour la mise à jour
-    const sanitizedData = this.sanitizeUserDataForUpdate(utilisateur, id);
-
-    console.log('🟡 Mise à jour utilisateur:', { 
-      type, 
-      url, 
-      id,
-      donnéesNettoyées: sanitizedData 
-    });
-
-    // Validation finale avant envoi
-    const validation = this.validateUserData(sanitizedData, 'UPDATE');
-    if (!validation.isValid) {
-      return throwError(() => new Error(validation.errors.join(', ')));
-    }
-
-    return this.http.put<AnyUtilisateur>(url, sanitizedData, this.httpOptions)
-      .pipe(
-        tap(response => console.log('✅ Utilisateur mis à jour avec succès:', response)),
-        catchError(error => this.handleUpdateError(error)) // ✅ CHANGEMENT ICI : Méthode spécifique pour mise à jour
-      );
-  }
-
-  /**
-   * ✅ NOUVELLE MÉTHODE : Gestion spécifique des erreurs de mise à jour
-   */
   private handleUpdateError(error: HttpErrorResponse): Observable<never> {
     console.error('🔍 ERREUR MISE À JOUR DÉTAILLÉE:', error);
 
@@ -187,392 +420,65 @@ export class UtilisateurService {
     } else if (error.status === 404) {
       userMessage = 'Utilisateur non trouvé.';
     } else if (error.status === 409) {
-      userMessage = 'Conflit : Les nouvelles données entrent en conflit avec des données existantes.';
+      userMessage = 'Conflit : les nouvelles données entrent en conflit avec des données existantes.';
     }
 
     return throwError(() => new Error(userMessage));
   }
 
-  /**
-   * Supprimer un utilisateur
-   */
-  deleteUtilisateur(id: number): Observable<void> {
-    const url = `${this.baseUrl}/utilisateurs/${id}`;
-    
-    console.log('🔴 Suppression utilisateur:', { id, url });
-
-    return this.http.delete<void>(url, this.httpOptions)
-      .pipe(
-        tap(() => console.log(`✅ Utilisateur ${id} supprimé avec succès`)),
-        catchError(error => this.handleError(error))
-      );
-  }
-
-  /**
-   * Récupérer un utilisateur par son ID
-   */
-  getUtilisateurById(id: number): Observable<AnyUtilisateur> {
-    const url = `${this.baseUrl}/utilisateurs/${id}`;
-    
-    console.log('🔍 Récupération utilisateur par ID:', { id, url });
-
-    return this.http.get<AnyUtilisateur>(url, this.httpOptions)
-      .pipe(
-        tap(user => console.log('✅ Utilisateur récupéré:', user)),
-        catchError(error => this.handleError(error))
-      );
-  }
-
-  /**
-   * Rechercher des utilisateurs
-   */
-  searchUtilisateurs(term: string): Observable<AnyUtilisateur[]> {
-    const params = new HttpParams().set('search', term);
-    
-    console.log('🔍 Recherche utilisateurs:', term);
-
-    return this.http.get<AnyUtilisateur[]>(`${this.baseUrl}/utilisateurs/search`, { 
-      ...this.httpOptions, 
-      params 
-    }).pipe(
-      tap(users => console.log(`✅ ${users.length} résultat(s) trouvé(s)`, users)),
-      catchError(error => this.handleError(error))
-    );
-  }
-
-  /**
-   * Nettoyage des données pour la création
-   */
-  private sanitizeUserDataForCreation(utilisateur: AnyUtilisateur): any {
-    // Faire une copie profonde
-    const sanitized = JSON.parse(JSON.stringify(utilisateur));
-    
-    console.log('🧹 Nettoyage données création - Avant:', sanitized);
-
-    // SUPPRIMER l'ID pour la création
-    delete sanitized.id;
-
-    // Nettoyer le mot de passe
-    sanitized.motDePasse = this.cleanPasswordField(sanitized.motDePasse);
-
-    // Supprimer les relations et champs problématiques
-    this.removeProblematicFields(sanitized);
-
-    // Nettoyer les champs vides/undefined
-    this.cleanEmptyFields(sanitized);
-
-    // Formater les dates
-    this.formatDates(sanitized);
-
-    console.log('🧹 Nettoyage données création - Après:', sanitized);
-    return sanitized;
-  }
-
-  /**
-   * Nettoyage des données pour la mise à jour
-   */
-  private sanitizeUserDataForUpdate(utilisateur: AnyUtilisateur, id: number): any {
-    // Faire une copie profonde
-    const sanitized = JSON.parse(JSON.stringify(utilisateur));
-    
-    console.log('🧹 Nettoyage données mise à jour - Avant:', sanitized);
-
-    // S'assurer que l'ID est présent
-    sanitized.id = id;
-
-    // Nettoyer le mot de passe
-    sanitized.motDePasse = this.cleanPasswordField(sanitized.motDePasse);
-    
-    // Si le mot de passe est vide, le supprimer (ne pas mettre à jour)
-    if (!sanitized.motDePasse || sanitized.motDePasse.toString().trim() === '') {
-      delete sanitized.motDePasse;
-      console.log('🔐 Mot de passe vide - suppression du champ');
+  private extractBackendErrorMessage(error: HttpErrorResponse): string {
+    if (!error.error) {
+      return 'Données invalides envoyées au serveur.';
     }
 
-    // Supprimer les relations et champs problématiques
-    this.removeProblematicFields(sanitized);
+    if (typeof error.error === 'object') {
+      const serverError = error.error;
 
-    // Nettoyer les champs vides/undefined
-    this.cleanEmptyFields(sanitized, true); // Garder les strings vides pour mise à jour
-
-    // Formater les dates
-    this.formatDates(sanitized);
-
-    console.log('🧹 Nettoyage données mise à jour - Après:', sanitized);
-    return sanitized;
-  }
-
-  /**
-   * Nettoie le champ mot de passe
-   */
-  private cleanPasswordField(password: any): string {
-    if (!password) return '';
-
-    let cleanedPassword = password;
-
-    // Gérer les tableaux Angular
-    if (Array.isArray(cleanedPassword)) {
-      cleanedPassword = cleanedPassword[0] || '';
-      console.log('🔄 Mot de passe converti depuis tableau:', cleanedPassword);
-    }
-
-    // Gérer les objets Angular
-    if (typeof cleanedPassword === 'object' && cleanedPassword !== null) {
-      if ('value' in cleanedPassword) {
-        cleanedPassword = cleanedPassword.value || '';
-        console.log('🔄 Mot de passe extrait depuis objet:', cleanedPassword);
-      } else {
-        cleanedPassword = '';
-        console.log('⚠️ Mot de passe objet non reconnu, valeur mise à vide');
+      if (serverError.message) {
+        return serverError.message;
       }
-    }
 
-    // Convertir en string et trimmer
-    return cleanedPassword.toString().trim();
-  }
-
-  /**
-   * Supprime les champs problématiques
-   */
-  private removeProblematicFields(data: any): void {
-    const fieldsToRemove = [
-      'demandes',
-      'transfusions',
-      'photoProfil', // Si non utilisé
-      'createdAt',
-      'updatedAt',
-      'version'
-    ];
-
-    fieldsToRemove.forEach(field => {
-      if (field in data) {
-        delete data[field];
-        console.log(`🗑️ Champ supprimé: ${field}`);
+      if (serverError.error) {
+        return serverError.error;
       }
-    });
-  }
 
-  /**
-   * Nettoie les champs vides
-   */
-  private cleanEmptyFields(data: any, keepEmptyStrings: boolean = false): void {
-    Object.keys(data).forEach(key => {
-      const value = data[key];
-      
-      if (value === undefined || value === null) {
-        delete data[key];
-        console.log(`🗑️ Champ ${key} supprimé (undefined/null)`);
-      } else if (!keepEmptyStrings && typeof value === 'string' && value.trim() === '') {
-        delete data[key];
-        console.log(`🗑️ Champ ${key} supprimé (string vide)`);
-      } else if (Array.isArray(value) && value.length === 0) {
-        delete data[key];
-        console.log(`🗑️ Champ ${key} supprimé (tableau vide)`);
+      if (serverError.errors) {
+        const validationErrors = Object.values(serverError.errors).flat();
+        return `Erreurs de validation: ${validationErrors.join(', ')}`;
       }
-    });
-  }
 
-  /**
-   * Formate les dates
-   */
-  private formatDates(data: any): void {
-    const dateFields = ['dateNaissance', 'dateEmbauche'];
-    
-    dateFields.forEach(field => {
-      if (data[field]) {
-        try {
-          const date = new Date(data[field]);
-          if (!isNaN(date.getTime())) {
-            data[field] = date.toISOString().split('T')[0]; // Format YYYY-MM-DD
-            console.log(`📅 Champ ${field} formaté: ${data[field]}`);
-          } else {
-            console.warn(`❌ Date invalide pour ${field}:`, data[field]);
-            delete data[field];
-          }
-        } catch (error) {
-          console.warn(`❌ Erreur format date ${field}:`, error);
-          delete data[field];
+      try {
+        const errorStr = JSON.stringify(serverError);
+        if (errorStr !== '{}') {
+          return `Erreur serveur: ${errorStr}`;
         }
-      }
-    });
-  }
-
-  /**
-   * Validation des données utilisateur
-   */
-  private validateUserData(data: any, operation: 'CREATE' | 'UPDATE'): { isValid: boolean; errors: string[] } {
-    const errors: string[] = [];
-
-    // Champs obligatoires pour création
-    const requiredFields = [
-      'matricule', 'nom', 'prenom', 'email', 'sexe', 
-      'dateNaissance', 'statut'
-    ];
-
-    if (operation === 'CREATE') {
-      requiredFields.forEach(field => {
-        if (!data[field] || data[field].toString().trim() === '') {
-          errors.push(`Le champ ${field} est requis`);
-        }
-      });
-
-      // Mot de passe requis en création
-      if (!data.motDePasse || data.motDePasse.toString().trim() === '') {
-        errors.push('Le mot de passe est requis pour la création');
+      } catch {
+        // rien
       }
     }
 
-    // Validation email
-    if (data.email && !this.isValidEmail(data.email)) {
-      errors.push('Format d\'email invalide');
+    if (typeof error.error === 'string' && error.error.length > 0) {
+      return error.error;
     }
 
-    // Validation dates
-    if (data.dateNaissance && !this.isValidDate(data.dateNaissance)) {
-      errors.push('Date de naissance invalide');
+    return 'Erreur de validation. Vérifiez que le matricule et l’email ne sont pas déjà utilisés.';
+  }
+
+  private handleError(error: HttpErrorResponse): Observable<never> {
+    console.error('❌ Erreur HTTP:', error);
+
+    let message = 'Une erreur inattendue est survenue.';
+
+    if (error.status === 0) {
+      message = 'Impossible de joindre le serveur.';
+    } else if (error.status === 404) {
+      message = 'Ressource introuvable.';
+    } else if (error.status === 500) {
+      message = 'Erreur interne du serveur.';
+    } else if (error.error?.message) {
+      message = error.error.message;
     }
 
-    if (data.dateEmbauche && !this.isValidDate(data.dateEmbauche)) {
-      errors.push('Date d\'embauche invalide');
-    }
-
-    // Validation champs spécifiques par type
-    const type = getUserType(data);
-    if (type === 'MEDECIN' && (!data.specialite || data.specialite.trim() === '')) {
-      errors.push('La spécialité est requise pour un médecin');
-    }
-
-    if (errors.length > 0) {
-      console.error('❌ Erreurs validation:', errors);
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
-  }
-
-  /**
-   * Validation email
-   */
-  private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  }
-
-  /**
-   * Validation date
-   */
-  private isValidDate(dateString: string): boolean {
-    if (!dateString) return false;
-    const date = new Date(dateString);
-    return !isNaN(date.getTime());
-  }
-
-  /**
-   * Récupère le bon endpoint selon le type
-   */
-  private getCreateUrlByType(type: string): string {
-    const endpoints: Record<string, string> = {
-      'MEDECIN': `${this.baseUrl}/medecins`,
-      'PERSONNEL': `${this.baseUrl}/personnel`,
-      'CHEF_SERVICE': `${this.baseUrl}/chefs-service`,
-      'ADMIN': `${this.baseUrl}/admins`
-    };
-    
-    const url = endpoints[type] || `${this.baseUrl}/utilisateurs`;
-    console.log(`🌐 Endpoint création ${type}: ${url}`);
-    return url;
-  }
-
-  /**
-   * Récupère le bon endpoint pour la mise à jour
-   */
-  private getUpdateUrlByType(type: string, id: number): string {
-    const endpoints: Record<string, string> = {
-      'MEDECIN': `${this.baseUrl}/medecins/${id}`,
-      'PERSONNEL': `${this.baseUrl}/personnel/${id}`,
-      'CHEF_SERVICE': `${this.baseUrl}/chefs-service/${id}`,
-      'ADMIN': `${this.baseUrl}/admins/${id}`
-    };
-    
-    const url = endpoints[type] || `${this.baseUrl}/utilisateurs/${id}`;
-    console.log(`🌐 Endpoint mise à jour ${type}: ${url}`);
-    return url;
-  }
-
-  /**
-   * Gestion des erreurs HTTP génériques
-   */
-  private handleError = (error: HttpErrorResponse) => {
-    console.error('🔍 ANALYSE ERREUR DÉTAILLÉE:', {
-      status: error.status,
-      statusText: error.statusText,
-      url: error.url,
-      error: error.error,
-      errorString: String(error.error),
-      headers: error.headers,
-      message: error.message
-    });
-
-    let userMessage = 'Une erreur est survenue.';
-
-    if (error.error instanceof ErrorEvent) {
-      userMessage = `Erreur réseau: ${error.error.message}`;
-    } else {
-      switch (error.status) {
-        case 400:
-          userMessage = this.analyzeBadRequest(error);
-          break;
-        case 404:
-          userMessage = 'Ressource non trouvée.';
-          break;
-        case 500:
-          userMessage = 'Erreur interne du serveur.';
-          break;
-        default:
-          userMessage = `Erreur ${error.status}: ${error.statusText}`;
-      }
-    }
-
-    return throwError(() => new Error(userMessage));
-  }
-
-  /**
-   * Analyse approfondie des erreurs 400
-   */
-  private analyzeBadRequest(error: HttpErrorResponse): string {
-    console.log('🔍 Analyse détaillée erreur 400:');
-    
-    if (error.error) {
-      console.log('📦 Body error existe:', error.error);
-      
-      if (typeof error.error === 'string' && error.error.length > 0) {
-        return `Erreur serveur: ${error.error}`;
-      }
-      
-      if (typeof error.error === 'object') {
-        if (error.error.message) {
-          return error.error.message;
-        }
-        if (error.error.error) {
-          return error.error.error;
-        }
-      }
-    }
-    
-    return 'Erreur de validation. Vérifiez les données envoyées.';
-  }
-
-  /**
-   * Vérifie la santé de l'API
-   */
-  checkHealth(): Observable<{ status: string; timestamp: string }> {
-    return this.http.get<{ status: string; timestamp: string }>(
-      `${this.baseUrl}/health`, 
-      this.httpOptions
-    ).pipe(
-      catchError(error => this.handleError(error))
-    );
+    return throwError(() => new Error(message));
   }
 }

@@ -59,7 +59,8 @@
                         [class.is-invalid]="form.get('statut')?.invalid && form.get('statut')?.touched">
                     <option value="ACTIF">🟢 Actif</option>
                     <option value="INACTIF">🔴 Inactif</option>
-                    <option value="CONGÉ">🟡 Congé</option>
+                    <option value="EN_ATTENTE_ACTIVATION">🟡 En attente d'activation</option>
+                    <option value="CONGÉ">🌴 Congé</option>
                 </select>
                 <div class="invalid-feedback" *ngIf="form.get('statut')?.invalid && form.get('statut')?.touched">
                     {{ getFieldError('statut') }}
@@ -163,25 +164,23 @@
             </div>
 
             <div class="col-md-6">
-                <label for="motDePasse" class="form-label">
-                    Mot de passe <span class="text-danger" *ngIf="!isEditMode">*</span>
-                </label>
-                <input id="motDePasse" type="password" class="form-control" 
-                       formControlName="motDePasse"
-                       [attr.placeholder]="isEditMode ? 'Laisser vide pour ne pas changer' : 'Saisir le mot de passe'"
-                       [class.is-invalid]="form.get('motDePasse')?.invalid && form.get('motDePasse')?.touched"
-                       [class.is-valid]="form.get('motDePasse')?.valid">
-                <div class="invalid-feedback" *ngIf="form.get('motDePasse')?.invalid && form.get('motDePasse')?.touched">
-                    {{ getFieldError('motDePasse') }}
-                </div>
-                <small class="form-text text-muted" *ngIf="isEditMode">
-                    <mat-icon class="me-1" style="font-size: 14px;">info</mat-icon>
-                    Laisser vide pour conserver le mot de passe actuel
-                </small>
-                <small class="form-text text-muted" *ngIf="!isEditMode">
-                    <mat-icon class="me-1" style="font-size: 14px;">lock</mat-icon>
-                    Minimum 8 caractères requis pour la sécurité
-                </small>
+            <label for="motDePasse" class="form-label">
+                Mot de passe
+                <span *ngIf="!isEditMode" class="text-muted">(généré automatiquement)</span>
+            </label>
+
+            <input
+                id="motDePasse"
+                type="password"
+                class="form-control"
+                formControlName="motDePasse"
+                placeholder="L'utilisateur définira son mot de passe via email"
+                [disabled]="!isEditMode"
+            />
+
+            <small class="text-muted" *ngIf="!isEditMode">
+                📧 Un email sera envoyé pour définir le mot de passe
+            </small>
             </div>
 
             <!-- Informations Administrateur -->

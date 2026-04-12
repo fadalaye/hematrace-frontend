@@ -1,0 +1,104 @@
+<div class="activation-page">
+  <div class="activation-card">
+    <div class="text-center mb-4">
+      <div class="icon-wrapper" [class.success]="success" [class.error]="!!errorMessage && !token">
+        <mat-icon>
+          {{ success ? 'check_circle' : 'lock_reset' }}
+        </mat-icon>
+      </div>
+
+      <h2 class="mt-3 mb-2">Activation du compte</h2>
+      <p class="text-muted mb-0" *ngIf="!success">
+        Définissez votre mot de passe pour activer votre compte.
+      </p>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      {{ errorMessage }}
+    </div>
+
+    <div *ngIf="success" class="alert alert-success">
+      Votre compte a été activé avec succès. Redirection vers la connexion...
+    </div>
+
+    <form
+      *ngIf="!success && token"
+      [formGroup]="form"
+      (ngSubmit)="onSubmit()"
+      novalidate
+    >
+      <div class="mb-3">
+        <label for="motDePasse" class="form-label">
+          Mot de passe <span class="text-danger">*</span>
+        </label>
+        <div class="input-group">
+          <input
+            id="motDePasse"
+            [type]="hidePassword ? 'password' : 'text'"
+            class="form-control"
+            formControlName="motDePasse"
+            placeholder="Saisissez votre mot de passe"
+            [class.is-invalid]="motDePasseControl?.invalid && motDePasseControl?.touched"
+          />
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="hidePassword = !hidePassword"
+          >
+            <mat-icon>{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+        </div>
+        <div class="invalid-feedback d-block" *ngIf="getFieldError('motDePasse')">
+          {{ getFieldError('motDePasse') }}
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label for="confirmationMotDePasse" class="form-label">
+          Confirmer le mot de passe <span class="text-danger">*</span>
+        </label>
+        <div class="input-group">
+          <input
+            id="confirmationMotDePasse"
+            [type]="hideConfirmPassword ? 'password' : 'text'"
+            class="form-control"
+            formControlName="confirmationMotDePasse"
+            placeholder="Confirmez votre mot de passe"
+            [class.is-invalid]="
+              (confirmationMotDePasseControl?.invalid && confirmationMotDePasseControl?.touched) ||
+              (form.hasError('passwordMismatch') && confirmationMotDePasseControl?.touched)
+            "
+          />
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="hideConfirmPassword = !hideConfirmPassword"
+          >
+            <mat-icon>{{ hideConfirmPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+        </div>
+        <div class="invalid-feedback d-block" *ngIf="getFieldError('confirmationMotDePasse')">
+          {{ getFieldError('confirmationMotDePasse') }}
+        </div>
+        <div class="invalid-feedback d-block" *ngIf="getPasswordMismatchError()">
+          {{ getPasswordMismatchError() }}
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        class="btn btn-primary w-100"
+        [disabled]="loading"
+      >
+        <span *ngIf="!loading">Activer mon compte</span>
+        <span *ngIf="loading">Activation en cours...</span>
+      </button>
+    </form>
+
+    <div class="text-center mt-4">
+      <button type="button" class="btn btn-link" (click)="goToLogin()">
+        Retour à la connexion
+      </button>
+    </div>
+  </div>
+</div>

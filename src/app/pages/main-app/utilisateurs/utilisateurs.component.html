@@ -1,40 +1,50 @@
-<!-- components/utilisateurs/utilisateurs.component.html -->
 <div class="container-fluid mt-3">
-  <!-- En-tête avec statistiques -->
+  <!-- En-tête -->
   <div class="row mb-4">
     <div class="col-12">
-      <div class="card bg-light">
+      <div class="card bg-light border-0 shadow-sm">
         <div class="card-body py-3">
-          <div class="row align-items-center">
-            <div class="col-md-6">
-              <h4 class="mb-0">
+          <div class="row align-items-center g-3">
+            <div class="col-lg-6">
+              <h4 class="mb-1 d-flex align-items-center">
                 <mat-icon class="me-2 text-primary">groups</mat-icon>
                 Gestion des Utilisateurs
               </h4>
               <small class="text-muted">
-                {{ getSelectedTypeLabel() }} • 
-                {{ getFilteredCount() }} sur {{ getTotalCount() }} utilisateur(s)
+                Pilotage des accès, activation des comptes et administration des profils HemaTrace
               </small>
             </div>
-            <div class="col-md-6 text-end">
-              <button mat-raised-button color="primary" 
-                      (click)="openAddUserModal()" 
-                      class="me-2"
-                      [disabled]="loadingIndicator()">
-                <mat-icon>add</mat-icon> 
+
+            <div class="col-lg-6 text-lg-end">
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="openAddUserModal()"
+                class="me-2"
+                [disabled]="loadingIndicator()"
+              >
+                <mat-icon>person_add</mat-icon>
                 Nouvel Utilisateur
               </button>
-              <button mat-stroked-button color="accent" 
-                      (click)="exportToExcel()"
-                      [disabled]="loadingIndicator() || getFilteredCount() === 0">
-                <mat-icon>download</mat-icon> 
+
+              <button
+                mat-stroked-button
+                color="accent"
+                (click)="exportToExcel()"
+                [disabled]="loadingIndicator() || getFilteredCount() === 0"
+                class="me-2"
+              >
+                <mat-icon>download</mat-icon>
                 Exporter Excel
               </button>
-              <button mat-icon-button 
-                      color="primary" 
-                      (click)="refreshList()"
-                      [disabled]="loadingIndicator()"
-                      matTooltip="Actualiser">
+
+              <button
+                mat-icon-button
+                color="primary"
+                (click)="refreshList()"
+                [disabled]="loadingIndicator()"
+                matTooltip="Actualiser la liste"
+              >
                 <mat-icon>refresh</mat-icon>
               </button>
             </div>
@@ -44,59 +54,192 @@
     </div>
   </div>
 
-  <!-- Filtres -->
-  <div class="row mb-3">
-    <div class="col-md-3">
-      <mat-form-field appearance="outline" class="w-100">
-        <mat-label>Filtrer par type</mat-label>
-        <mat-select (selectionChange)="onTypeFilterChange($event)" 
-                   [value]="selectedType()">
-          <mat-option *ngFor="let type of userTypes" [value]="type.value">
-            <div class="d-flex align-items-center">
-              <mat-icon class="me-2" style="font-size: 18px;">{{ type.icon }}</mat-icon>
-              <span>{{ type.label }}</span>
-            </div>
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
+  <!-- KPI -->
+  <div class="row mb-4 g-3">
+    <div class="col-md-6 col-xl-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <div class="me-3">
+            <mat-icon class="text-primary" style="font-size: 36px; width: 36px; height: 36px;">
+              groups
+            </mat-icon>
+          </div>
+          <div>
+            <div class="text-muted small">Total utilisateurs</div>
+            <div class="fs-4 fw-bold">{{ getTotalCount() }}</div>
+          </div>
+        </div>
+      </div>
     </div>
-    
-    <div class="col-md-6">
-      <mat-form-field appearance="outline" class="w-100">
-        <mat-label>Rechercher un utilisateur...</mat-label>
-        <input matInput 
-               (input)="onFilterChange($event)" 
-               placeholder="Nom, prénom, email, matricule, téléphone..." 
-               [disabled]="loadingIndicator()">
-        <mat-icon matSuffix>search</mat-icon>
-      </mat-form-field>
+
+    <div class="col-md-6 col-xl-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <div class="me-3">
+            <mat-icon class="text-success" style="font-size: 36px; width: 36px; height: 36px;">
+              check_circle
+            </mat-icon>
+          </div>
+          <div>
+            <div class="text-muted small">Comptes actifs</div>
+            <div class="fs-4 fw-bold">{{ getStatutCount('ACTIF') }}</div>
+          </div>
+        </div>
+      </div>
     </div>
-    
-    <div class="col-md-3">
-      <div class="d-flex h-100 align-items-center">
-        <div class="text-muted small">
-          <mat-icon class="me-1" style="font-size: 16px;">filter_list</mat-icon>
-          {{ getFilteredCount() }} résultat(s)
+
+    <div class="col-md-6 col-xl-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <div class="me-3">
+            <mat-icon class="text-warning" style="font-size: 36px; width: 36px; height: 36px;">
+              hourglass_top
+            </mat-icon>
+          </div>
+          <div>
+            <div class="text-muted small">En attente d'activation</div>
+            <div class="fs-4 fw-bold">{{ getStatutCount('EN_ATTENTE_ACTIVATION') }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <div class="me-3">
+            <mat-icon class="text-secondary" style="font-size: 36px; width: 36px; height: 36px;">
+              pause_circle
+            </mat-icon>
+          </div>
+          <div>
+            <div class="text-muted small">Inactifs / Congé</div>
+            <div class="fs-4 fw-bold">{{ getInactiveLikeCount() }}</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Indicateur de chargement -->
+  <!-- Filtres -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3 align-items-center">
+        <div class="col-md-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Filtrer par type</mat-label>
+            <mat-select
+              (selectionChange)="onTypeFilterChange($event)"
+              [value]="selectedType()"
+            >
+              <mat-option *ngFor="let type of userTypes" [value]="type.value">
+                <div class="d-flex align-items-center">
+                  <mat-icon class="me-2" style="font-size: 18px;">
+                    {{ type.icon }}
+                  </mat-icon>
+                  <span>{{ type.label }}</span>
+                </div>
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Filtrer par statut</mat-label>
+            <mat-select
+              (selectionChange)="onStatutFilterChange($event)"
+              [value]="selectedStatut()"
+            >
+              <mat-option *ngFor="let statut of statutsFiltres" [value]="statut.value">
+                {{ statut.label }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-4">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Rechercher un utilisateur...</mat-label>
+            <input
+              matInput
+              (input)="onFilterChange($event)"
+              [value]="searchTerm()"
+              placeholder="Nom, prénom, email, matricule, téléphone, rôle..."
+              [disabled]="loadingIndicator()"
+            />
+            <button
+              *ngIf="searchTerm()"
+              mat-icon-button
+              matSuffix
+              (click)="clearSearch()"
+              type="button"
+              matTooltip="Effacer la recherche"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+            <mat-icon *ngIf="!searchTerm()" matSuffix>search</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-2">
+          <div class="text-muted small d-flex align-items-center justify-content-md-end">
+            <mat-icon class="me-1" style="font-size: 16px;">filter_list</mat-icon>
+            {{ getFilteredCount() }} résultat(s)
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtres rapides -->
+      <div class="d-flex flex-wrap gap-2 mt-2">
+        <button
+          mat-stroked-button
+          color="primary"
+          (click)="applyQuickStatutFilter('EN_ATTENTE_ACTIVATION')"
+          [disabled]="loadingIndicator()"
+        >
+          <mat-icon>mark_email_unread</mat-icon>
+          Comptes à activer
+        </button>
+
+        <button
+          mat-stroked-button
+          color="primary"
+          (click)="applyQuickStatutFilter('ACTIF')"
+          [disabled]="loadingIndicator()"
+        >
+          <mat-icon>verified_user</mat-icon>
+          Comptes actifs
+        </button>
+
+        <button
+          mat-stroked-button
+          color="primary"
+          (click)="resetFilters()"
+          [disabled]="loadingIndicator()"
+        >
+          <mat-icon>restart_alt</mat-icon>
+          Réinitialiser
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chargement -->
   <div *ngIf="loadingIndicator()" class="text-center py-5">
     <div class="mb-3">
       <mat-spinner diameter="50" class="mx-auto"></mat-spinner>
     </div>
-    <p class="text-muted">Chargement des utilisateurs...</p>
+    <p class="text-muted mb-0">Chargement des utilisateurs...</p>
   </div>
 
-  <!-- Tableau des utilisateurs -->
-  <div *ngIf="!loadingIndicator()" class="card">
+  <!-- Tableau -->
+  <div *ngIf="!loadingIndicator()" class="card border-0 shadow-sm">
     <div class="card-body p-0">
       <div class="table-responsive">
         <table mat-table [dataSource]="dataSource" matSort class="w-100">
-          
-          <!-- Colonne Matricule -->
+
+          <!-- Matricule -->
           <ng-container matColumnDef="matricule">
             <th mat-header-cell *matHeaderCellDef mat-sort-header class="ps-3">
               <div class="d-flex align-items-center">
@@ -105,26 +248,34 @@
               </div>
             </th>
             <td mat-cell *matCellDef="let u" class="ps-3">
-              <code class="text-primary">{{ u.matricule }}</code>
+              <code class="text-primary fw-semibold">{{ u.matricule }}</code>
             </td>
           </ng-container>
 
-          <!-- Colonne Prénom -->
+          <!-- Prénom -->
           <ng-container matColumnDef="prenom">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>
-              Prénom
+              Utilisateur
             </th>
             <td mat-cell *matCellDef="let u">
               <div class="d-flex align-items-center">
-                <mat-icon class="me-2 text-muted" style="font-size: 18px;">
-                  {{ u.sexe === 'F' ? 'female' : 'male' }}
-                </mat-icon>
-                {{ u.prenom }}
+                <div class="rounded-circle bg-light border d-flex align-items-center justify-content-center me-2"
+                     style="width: 38px; height: 38px; min-width: 38px;">
+                  <mat-icon class="text-muted" style="font-size: 18px;">
+                    {{ u.sexe === 'F' ? 'female' : 'male' }}
+                  </mat-icon>
+                </div>
+                <div>
+                  <div class="fw-semibold">{{ u.prenom }} {{ u.nom }}</div>
+                  <div class="text-muted small">
+                    {{ u.age ? (u.age + ' ans') : 'Âge non disponible' }}
+                  </div>
+                </div>
               </div>
             </td>
           </ng-container>
 
-          <!-- Colonne Nom -->
+          <!-- Nom -->
           <ng-container matColumnDef="nom">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>
               Nom
@@ -134,7 +285,7 @@
             </td>
           </ng-container>
 
-          <!-- Colonne Email -->
+          <!-- Email -->
           <ng-container matColumnDef="email">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>
               <div class="d-flex align-items-center">
@@ -143,25 +294,30 @@
               </div>
             </th>
             <td mat-cell *matCellDef="let u">
-              <a [href]="'mailto:' + u.email" class="text-decoration-none">
-                {{ u.email }}
-              </a>
+              <div class="d-flex flex-column">
+                <a [href]="'mailto:' + u.email" class="text-decoration-none fw-medium">
+                  {{ u.email }}
+                </a>
+                <small class="text-muted" *ngIf="u.telephone">
+                  {{ u.telephone }}
+                </small>
+              </div>
             </td>
           </ng-container>
 
-          <!-- Colonne Type -->
+          <!-- Type -->
           <ng-container matColumnDef="type">
             <th mat-header-cell *matHeaderCellDef>
               Type
             </th>
             <td mat-cell *matCellDef="let u">
-              <span [class]="u.badgeClass" class="badge">
+              <span [class]="u.badgeClass" class="badge px-2 py-2">
                 {{ u.typeLabel }}
               </span>
             </td>
           </ng-container>
 
-          <!-- Colonne Spécificité -->
+          <!-- Spécificité -->
           <ng-container matColumnDef="specificInfo">
             <th mat-header-cell *matHeaderCellDef>
               Spécificité
@@ -173,95 +329,151 @@
             </td>
           </ng-container>
 
-          <!-- Colonne Statut -->
+          <!-- Statut -->
           <ng-container matColumnDef="statut">
             <th mat-header-cell *matHeaderCellDef>
               Statut
             </th>
             <td mat-cell *matCellDef="let u">
-              <mat-chip 
-                [color]="u.statut === 'ACTIF' ? 'primary' : 'warn'" 
+              <mat-chip
+                [color]="getStatutChipColor(u.statut)"
                 selected
-                [matTooltip]="u.statut === 'ACTIF' ? 'Utilisateur actif' : 'Utilisateur inactif'">
+                [matTooltip]="getStatutTooltip(u.statut)"
+              >
                 <mat-icon class="me-1" style="font-size: 16px;">
-                  {{ u.statut === 'ACTIF' ? 'check_circle' : 'cancel' }}
+                  {{ getStatutIcon(u.statut) }}
                 </mat-icon>
-                {{ u.statut }}
+                {{ formatStatutLabel(u.statut) }}
               </mat-chip>
             </td>
           </ng-container>
 
-          <!-- Colonne Actions -->
+          <!-- Actions -->
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef class="text-end pe-3">
               Actions
             </th>
             <td mat-cell *matCellDef="let u" class="text-end pe-3">
-              <div class="btn-group" role="group">
-                <button mat-icon-button 
-                        color="primary" 
-                        matTooltip="Modifier"
-                        (click)="openUserFormModal(u)"
-                        class="me-1">
+              <button
+                mat-icon-button
+                color="primary"
+                matTooltip="Modifier"
+                (click)="openUserFormModal(u)"
+                class="me-1"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                [matMenuTriggerFor]="userMenu"
+                matTooltip="Plus d'actions"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+
+              <mat-menu #userMenu="matMenu">
+                <button mat-menu-item (click)="showUserSummary(u)">
+                  <mat-icon>visibility</mat-icon>
+                  <span>Voir résumé</span>
+                </button>
+
+                <button mat-menu-item (click)="openUserFormModal(u)">
                   <mat-icon>edit</mat-icon>
+                  <span>Modifier</span>
                 </button>
-                
-                <button mat-icon-button 
-                        color="warn" 
-                        matTooltip="Supprimer"
-                        (click)="deleteUser(u)"
-                        [disabled]="savingIndicator()">
-                  <mat-icon>delete</mat-icon>
+
+                <button
+                  mat-menu-item
+                  *ngIf="u.statut === 'EN_ATTENTE_ACTIVATION'"
+                  (click)="resendActivationEmail(u)"
+                >
+                  <mat-icon>mark_email_unread</mat-icon>
+                  <span>Renvoyer l'activation</span>
                 </button>
-              </div>
+
+                <button
+                  mat-menu-item
+                  (click)="toggleUserStatus(u)"
+                  *ngIf="u.statut === 'ACTIF' || u.statut === 'INACTIF'"
+                >
+                  <mat-icon>{{ u.statut === 'ACTIF' ? 'pause_circle' : 'check_circle' }}</mat-icon>
+                  <span>{{ u.statut === 'ACTIF' ? 'Passer inactif' : 'Réactiver' }}</span>
+                </button>
+
+                <button mat-menu-item (click)="deleteUser(u)" [disabled]="savingIndicator()">
+                  <mat-icon color="warn">delete</mat-icon>
+                  <span>Supprimer</span>
+                </button>
+              </mat-menu>
             </td>
           </ng-container>
 
-          <!-- En-tête et lignes -->
           <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-light"></tr>
-          <tr mat-row 
-              *matRowDef="let row; columns: displayedColumns;" 
-              class="hover-row"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns;"
+            class="hover-row"
+            (dblclick)="openUserFormModal(row)"
+          ></tr>
         </table>
       </div>
 
       <!-- Pagination -->
-      <mat-paginator [pageSize]="10" 
-                    [pageSizeOptions]="[5, 10, 25, 50]" 
-                    showFirstLastButtons
-                    class="border-top">
+      <mat-paginator
+        [pageSize]="10"
+        [pageSizeOptions]="[5, 10, 25, 50]"
+        showFirstLastButtons
+        class="border-top"
+      >
       </mat-paginator>
 
-      <!-- Message si aucun résultat -->
-      <div *ngIf="getFilteredCount() === 0 && !loadingIndicator()" 
-           class="text-center py-5 text-muted">
+      <!-- Vide -->
+      <div
+        *ngIf="getFilteredCount() === 0 && !loadingIndicator()"
+        class="text-center py-5 text-muted"
+      >
         <mat-icon class="display-1 text-muted mb-3">search_off</mat-icon>
-        <h5>Aucun utilisateur trouvé</h5>
-        <p *ngIf="selectedType() !== 'TOUS' || searchTerm()">
-          Aucun résultat pour les filtres actuels.
-          <a href="javascript:void(0)" 
-             (click)="selectedType.set('TOUS'); searchTerm.set(''); applyFilters()"
-             class="text-primary text-decoration-none">
+        <h5 class="mb-2">Aucun utilisateur trouvé</h5>
+
+        <p *ngIf="selectedType() !== 'TOUS' || selectedStatut() !== 'TOUS' || searchTerm()">
+          Aucun résultat ne correspond aux filtres actuels.
+        </p>
+
+        <div class="d-flex justify-content-center gap-2 flex-wrap">
+          <button
+            mat-stroked-button
+            color="primary"
+            *ngIf="selectedType() !== 'TOUS' || selectedStatut() !== 'TOUS' || searchTerm()"
+            (click)="resetFilters()"
+          >
+            <mat-icon>restart_alt</mat-icon>
             Réinitialiser les filtres
-          </a>
-        </p>
-        <p *ngIf="selectedType() === 'TOUS' && !searchTerm()">
-          Aucun utilisateur enregistré. 
-          <a href="javascript:void(0)" 
-             (click)="openAddUserModal()"
-             class="text-primary text-decoration-none">
+          </button>
+
+          <button
+            mat-raised-button
+            color="primary"
+            *ngIf="selectedType() === 'TOUS' && selectedStatut() === 'TOUS' && !searchTerm()"
+            (click)="openAddUserModal()"
+          >
+            <mat-icon>person_add</mat-icon>
             Créer le premier utilisateur
-          </a>
-        </p>
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Indicateur de sauvegarde -->
-  <div *ngIf="savingIndicator()" class="position-fixed top-0 start-50 translate-middle-x mt-3">
+  <!-- Sauvegarde -->
+  <div
+    *ngIf="savingIndicator()"
+    class="position-fixed top-0 start-50 translate-middle-x mt-3"
+    style="z-index: 2000;"
+  >
     <div class="alert alert-info d-flex align-items-center shadow">
       <mat-spinner diameter="20" class="me-2"></mat-spinner>
-      <span>Sauvegarde en cours...</span>
+      <span>Traitement en cours...</span>
     </div>
   </div>
 </div>

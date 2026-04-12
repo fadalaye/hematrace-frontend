@@ -1,4 +1,3 @@
-// interfaces/utilisateur.interface.ts
 export interface Utilisateur {
   id?: number;
   matricule: string;
@@ -12,5 +11,5 @@ export interface Utilisateur {
   dateEmbauche?: string;
   motDePasse?: string;
   photoProfil?: string;
-  statut: 'ACTIF' | 'INACTIF' | 'CONGÉ';
+  statut: 'ACTIF' | 'INACTIF' | 'CONGÉ' | 'EN_ATTENTE_ACTIVATION';
 }
