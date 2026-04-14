@@ -192,7 +192,7 @@ export class TracabiliteService {
   // ==================== CHAÎNE COMPLÈTE ====================
 
   getEntityChain(type: string, id: number): Observable<TraceElement[]> {
-    return this.http.get<TraceElement[]>(`${this.apiUrl}/chain/${type}/${id}`)
+    return this.http.get<TraceElement[]>(`${this.apiUrl}/chain-metier/${type}/${id}`)
       .pipe(
         map(traces => traces.map(trace => this.enrichTraceData(trace))),
         catchError(error => {
@@ -505,23 +505,25 @@ export class TracabiliteService {
     return icons[type] || 'search';
   }
 
-  private getStatusColor(status: string): string {
+    private getStatusColor(status: string): string {
+    const normalized = (status || '').trim().toUpperCase();
+
     const colors: { [key: string]: string } = {
-      DISPONIBLE: '#4caf50',
-      VALIDE: '#4caf50',
-      COMPLETE: '#4caf50',
-      LOGUE: '#4caf50',
-      EN_ATTENTE: '#ff9800',
-      EN_COURS: '#ff9800',
-      EN_TRANSIT: '#ff9800',
-      NON_VALIDE: '#f44336',
-      ANNULE: '#f44336',
-      INACTIF: '#9e9e9e',
-      PERIME: '#9e9e9e',
-      TERMINE: '#2196f3',
-      CLOTURE: '#2196f3'
+      'DISPONIBLE': '#4caf50',
+      'EN ATTENTE': '#ff9800',
+      'VALIDÉE': '#4caf50',
+      'REJETÉE': '#f44336',
+      'DÉLIVRÉE': '#2196f3',
+      'UTILISÉ': '#6a1b9a',
+      'EXPIRÉ': '#9e9e9e',
+      'TOLÉRÉE': '#4caf50',
+      'NON TOLÉRÉE': '#f44336',
+      'VALIDE': '#4caf50',
+      'NON_VALIDE': '#f44336',
+      'COMPLETE': '#2196f3',
+      'LOGUE': '#607d8b'
     };
-    return colors[status] || '#757575';
+    return colors[normalized] || '#757575';
   }
 
   // ==================== UTILITAIRES ====================
@@ -554,22 +556,24 @@ export class TracabiliteService {
     return names[type] || type.charAt(0).toUpperCase() + type.slice(1);
   }
 
-  getStatusDisplayName(status: string): string {
+    getStatusDisplayName(status: string): string {
+    const normalized = (status || '').trim().toUpperCase();
     const names: { [key: string]: string } = {
-      DISPONIBLE: 'Disponible',
-      EN_ATTENTE: 'En attente',
-      VALIDE: 'Validé',
-      NON_VALIDE: 'Non validé',
-      COMPLETE: 'Complété',
-      EN_COURS: 'En cours',
-      EN_TRANSIT: 'En transit',
-      ANNULE: 'Annulé',
-      LOGUE: 'Logué',
-      PERIME: 'Périmé',
-      TERMINE: 'Terminé',
-      CLOTURE: 'Clôturé'
+      'DISPONIBLE': 'Disponible',
+      'EN ATTENTE': 'En attente',
+      'VALIDÉE': 'Validée',
+      'REJETÉE': 'Rejetée',
+      'DÉLIVRÉE': 'Délivrée',
+      'UTILISÉ': 'Utilisé',
+      'EXPIRÉ': 'Expiré',
+      'TOLÉRÉE': 'Tolérée',
+      'NON TOLÉRÉE': 'Non tolérée',
+      'VALIDE': 'Validé',
+      'NON_VALIDE': 'Non validé',
+      'COMPLETE': 'Complété',
+      'LOGUE': 'Logué'
     };
-    return names[status] || status;
+    return names[normalized] || status;
   }
 
   getTypeColor(type: string): string {

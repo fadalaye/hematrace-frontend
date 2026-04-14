@@ -71,12 +71,18 @@ export class TracabiliteComponent implements OnInit, AfterViewInit {
   statuses = [
     { value: '', label: 'Tous' },
     { value: 'DISPONIBLE', label: 'Disponible' },
-    { value: 'EN_ATTENTE', label: 'En attente' },
+    { value: 'DISPONIBLE', label: 'Disponible' },
+    { value: 'EN ATTENTE', label: 'En attente' },
+    { value: 'VALIDÉE', label: 'Validée' },
+    { value: 'REJETÉE', label: 'Rejetée' },
+    { value: 'DÉLIVRÉE', label: 'Délivrée' },
+    { value: 'UTILISÉ', label: 'Utilisé' },
+    { value: 'EXPIRÉ', label: 'Expiré' },
+    { value: 'TOLÉRÉE', label: 'Tolérée' },
+    { value: 'NON TOLÉRÉE', label: 'Non tolérée' },
     { value: 'VALIDE', label: 'Validé' },
     { value: 'NON_VALIDE', label: 'Non validé' },
     { value: 'COMPLETE', label: 'Complété' },
-    { value: 'EN_COURS', label: 'En cours' },
-    { value: 'ANNULE', label: 'Annulé' },
     { value: 'LOGUE', label: 'Logué' }
   ];
 
@@ -457,7 +463,7 @@ export class HistoriqueModalComponent {
   template: `
     <h2 mat-dialog-title>
       <mat-icon>alt_route</mat-icon>
-      Chaîne complète de {{getTypeDisplayName(data.element.type)}} #{{data.element.id}}
+      Chaîne métier complète de {{getTypeDisplayName(data.element.type)}} #{{data.element.id}}
     </h2>
     
     <mat-dialog-content>
@@ -497,6 +503,15 @@ export class HistoriqueModalComponent {
                   </div>
                   <div *ngIf="trace.entity.codeProduit">
                     <strong>Code produit:</strong> {{trace.entity.codeProduit}}
+                  </div>
+                  <div *ngIf="trace.entity.nombreProduits">
+                    <strong>Nombre de produits:</strong> {{trace.entity.nombreProduits}}
+                  </div>
+                  <div *ngIf="trace.entity.tolerance">
+                    <strong>Tolérance:</strong> {{trace.entity.tolerance}}
+                  </div>
+                  <div *ngIf="trace.entity.numeroLotProduit">
+                    <strong>Lot produit:</strong> {{trace.entity.numeroLotProduit}}
                   </div>
                 </div>
               </div>
@@ -589,7 +604,7 @@ export class HistoriqueModalComponent {
       font-size: 14px;
     }
     
-    .chaine-user {
+    .chaine-relation, .chaine-user {
       display: flex;
       align-items: center;
       gap: 4px;

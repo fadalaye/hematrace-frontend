@@ -1,19 +1,307 @@
-.user-type-dialog {
-  .mat-mdc-dialog-container {
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+:host {
+  display: block;
+}
+
+// =========================
+// Cartes / structure globale
+// =========================
+.card {
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.card-body {
+  position: relative;
+}
+
+.container-fluid {
+  .card {
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
   }
 }
 
-// Styles pour les cartes de type utilisateur
-.user-type-card {
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
+// =========================
+// En-tête
+// =========================
+h4 {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.text-muted {
+  color: #6b7280 !important;
+}
+
+// =========================
+// KPI cards
+// =========================
+.row.mb-4.g-3 {
+  .card {
+    border: 1px solid rgba(0, 0, 0, 0.04);
   }
-  
-  &.selected {
-    border-width: 2px !important;
+
+  .card-body {
+    min-height: 96px;
+  }
+
+  .fs-4 {
+    line-height: 1.1;
+    color: #111827;
+  }
+}
+
+// =========================
+// Filtres
+// =========================
+mat-form-field {
+  .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+}
+
+.d-flex.flex-wrap.gap-2.mt-2 {
+  button {
+    border-radius: 0.75rem;
+  }
+}
+
+// =========================
+// Tableau
+// =========================
+.table-responsive {
+  overflow-x: auto;
+}
+
+table[mat-table] {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+tr.mat-mdc-header-row {
+  background: #f8fafc;
+}
+
+th.mat-mdc-header-cell {
+  font-weight: 700;
+  color: #374151;
+  font-size: 0.92rem;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+td.mat-mdc-cell {
+  vertical-align: middle;
+  color: #1f2937;
+  border-bottom: 1px solid #f1f5f9;
+  padding-top: 0.95rem;
+  padding-bottom: 0.95rem;
+}
+
+.hover-row {
+  transition: background-color 0.18s ease, transform 0.12s ease;
+  cursor: default;
+}
+
+.hover-row:hover {
+  background-color: #f8fbff;
+}
+
+// =========================
+// Badges type utilisateur
+// =========================
+.badge {
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 999px;
+  letter-spacing: 0.2px;
+}
+
+.bg-primary {
+  background-color: #0d6efd !important;
+}
+
+.bg-info {
+  background-color: #cff4fc !important;
+  color: #055160 !important;
+}
+
+.bg-warning {
+  background-color: #fff3cd !important;
+  color: #664d03 !important;
+}
+
+.bg-danger {
+  background-color: #dc3545 !important;
+}
+
+.bg-secondary {
+  background-color: #6c757d !important;
+}
+
+// =========================
+// Mat chips statut
+// =========================
+mat-chip {
+  font-weight: 600;
+  border-radius: 999px !important;
+  min-height: 32px;
+  padding-inline: 0.65rem !important;
+
+  mat-icon {
+    margin-right: 0.2rem;
+    vertical-align: middle;
+  }
+}
+
+// =========================
+// Avatar rond dans le tableau
+// =========================
+.rounded-circle.bg-light.border {
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%) !important;
+  border-color: #e5e7eb !important;
+}
+
+// =========================
+// Liens email
+// =========================
+a.text-decoration-none {
+  color: #0d6efd;
+  transition: color 0.2s ease;
+}
+
+a.text-decoration-none:hover {
+  color: #0a58ca;
+  text-decoration: underline !important;
+}
+
+// =========================
+// Boutons actions
+// =========================
+button[mat-icon-button] {
+  transition: transform 0.15s ease, background-color 0.15s ease;
+  border-radius: 0.7rem;
+}
+
+button[mat-icon-button]:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background-color: rgba(13, 110, 253, 0.06);
+}
+
+button[mat-raised-button],
+button[mat-stroked-button] {
+  border-radius: 0.8rem;
+  font-weight: 600;
+}
+
+// =========================
+// Paginator
+// =========================
+mat-paginator {
+  background: #fff;
+}
+
+// =========================
+// Zone vide
+// =========================
+.text-center.py-5 {
+  .display-1 {
+    font-size: 4rem;
+    opacity: 0.7;
+  }
+
+  h5 {
+    font-weight: 700;
+    color: #374151;
+  }
+
+  p {
+    color: #6b7280;
+  }
+}
+
+// =========================
+// Snackbar helpers
+// =========================
+::ng-deep .snackbar-success {
+  .mdc-snackbar__surface {
+    background-color: #198754 !important;
+    color: #fff !important;
+  }
+}
+
+::ng-deep .snackbar-error {
+  .mdc-snackbar__surface {
+    background-color: #dc3545 !important;
+    color: #fff !important;
+  }
+}
+
+::ng-deep .snackbar-warning {
+  .mdc-snackbar__surface {
+    background-color: #f59e0b !important;
+    color: #fff !important;
+  }
+}
+
+// =========================
+// Menu Material
+// =========================
+::ng-deep .mat-mdc-menu-panel {
+  border-radius: 0.9rem !important;
+  overflow: hidden;
+}
+
+::ng-deep .mat-mdc-menu-item {
+  min-height: 42px;
+  font-size: 0.93rem;
+}
+
+// =========================
+// Spinner / notification flottante
+// =========================
+.alert.alert-info.shadow {
+  border-radius: 0.9rem;
+  border: none;
+  background: #e9f5ff;
+  color: #0c5460;
+}
+
+// =========================
+// Responsive
+// =========================
+@media (max-width: 991.98px) {
+  .card-body.py-3 {
+    text-align: left !important;
+  }
+
+  .text-lg-end {
+    text-align: left !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .container-fluid {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  th.mat-mdc-header-cell,
+  td.mat-mdc-cell {
+    font-size: 0.88rem;
+  }
+
+  .badge {
+    font-size: 0.72rem;
+  }
+
+  mat-chip {
+    font-size: 0.78rem;
+  }
+
+  .rounded-circle.bg-light.border {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
   }
 }
